@@ -2,21 +2,22 @@
 # core count
 ##########################################################
 #low-cpu usage:
-#  1. vm
-#  2. iomix
-#  3. access
-#  4. chattr
-#  5. chdir
-#  6. chmod
-#  7. chown
-#  8. dev
+#  1. access
+#  2. chattr
+#  3. chdir
+#  4. chmod
+#  5. chown
+#  6. dev
+#  7. iomix
+#  8. vm
 #
 #high-cpu usage:
 #  1.   bigheap
-#  2-3. memcpy
-#  4    malloc
-#  5.   chroot
-#  6.   pci
+#  2-3. epoll - 2x(core)
+#  3-4. memcpy
+#  5.   malloc
+#  6.   chroot
+#  7.   pci
 #
 #remaining cores: matrix
 
@@ -77,7 +78,8 @@ chdir  1             # low cpu usage
 chmod  1             # low cpu usage
 chown  1             # low cpu usage
 chroot 1
-dev    1
+dev    1             # low cpu usage
+epoll  1
 pci    1
 
 ##########################################################

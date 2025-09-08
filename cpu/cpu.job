@@ -1,0 +1,88 @@
+##########################################################
+# core count
+##########################################################
+#low-cpu usage:
+#  1. vm
+#  2. iomix
+#  3. access
+#  4. chattr
+#  5. chdir
+#  6. chmod
+#  7. chown
+#  8. dev
+#
+#high-cpu usage:
+#  1.   bigheap
+#  2-3. memcpy
+#  4    malloc
+#  5.   chroot
+#  6.   pci
+#
+#remaining cores: matrix
+
+##########################################################
+# run options
+##########################################################
+run parallel      # run stressors in parallel
+#timeout 3h         # stop each stressor after 60 seconds
+timeout 60s       # stop each stressor after 60 seconds
+#pathological      # needed for bind-mount
+
+##########################################################
+# output options
+##########################################################
+#verbose          # verbose output
+metrics          # show metrics at end of run
+timestamp        # timestamp log output
+tz               # collect temperature
+
+##########################################################
+# memory stressors
+##########################################################
+#memthrash 1         # avoid this test!!! it uses threads and steals cpu power from matrix
+
+# selected stressors
+bigheap 1
+memcpy  2
+
+# malloc stressor options
+malloc 2
+malloc-bytes 95%     # 95% of available memory
+
+# vm stressor options
+vm 2                 # low cpu usage
+vm-bytes 95%         # 95% of available memory
+vm-keep              # keep vm mapping
+vm-populate          # populate memory
+
+##########################################################
+# io stressors
+##########################################################
+
+iomix 2              # low cpu usage
+
+##########################################################
+# os/kernel stressors
+##########################################################
+#bind-mount 1        # requires --pathological, may hang machine
+
+# not available on Rocky 8.10, but available on Rocky 9
+#acl
+#cgroup
+
+# selected stressors
+access 1             # low cpu usage
+chattr 1             # low cpu usage
+chdir  1             # low cpu usage
+chmod  1             # low cpu usage
+chown  1             # low cpu usage
+chroot 1
+dev    1
+pci    1
+
+##########################################################
+# cpu stressors
+##########################################################
+
+# use matrix on remaining cores to keep cpus at 100%
+#matrix 50

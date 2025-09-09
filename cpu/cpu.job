@@ -7,17 +7,20 @@
 #  3. chdir
 #  4. chmod
 #  5. chown
-#  6. dev
-#  7. iomix
-#  8. vm
+#  6. dev       0.5x
+#  7. eventfd   0.6x
+#  8. fallocate
+#  9. flock
+#  10. fork
+#  11-12. iomix
+#  13. vm
 #
 #high-cpu usage:
 #  1.   bigheap
-#  2-3. epoll - 2x(core)
-#  3-4. memcpy
-#  5.   malloc
-#  6.   chroot
-#  7.   pci
+#  2.   memcpy
+#  3.   malloc
+#  4.   chroot
+#  5.   pci
 #
 #remaining cores: matrix
 
@@ -26,7 +29,7 @@
 ##########################################################
 run parallel      # run stressors in parallel
 #timeout 3h         # stop each stressor after 60 seconds
-timeout 60s       # stop each stressor after 60 seconds
+timeout 30m        # stop each stressor after 60 seconds
 #pathological      # needed for bind-mount
 
 ##########################################################
@@ -44,15 +47,15 @@ tz               # collect temperature
 
 # selected stressors
 bigheap 1
-memcpy  2
+memcpy  1
 
 # malloc stressor options
-malloc 2
-malloc-bytes 95%     # 95% of available memory
+malloc 1
+malloc-bytes 90%     # 95% of available memory
 
 # vm stressor options
-vm 2                 # low cpu usage
-vm-bytes 95%         # 95% of available memory
+vm 1                 # low cpu usage
+vm-bytes 90%         # 95% of available memory
 vm-keep              # keep vm mapping
 vm-populate          # populate memory
 
@@ -66,10 +69,13 @@ iomix 2              # low cpu usage
 # os/kernel stressors
 ##########################################################
 #bind-mount 1        # requires --pathological, may hang machine
+#epoll      1        # too intensive, may affect other stressors
+#fifo       1        # too intensive, 3 min test took 33 min, affects other stressors
 
 # not available on Rocky 8.10, but available on Rocky 9
 #acl
 #cgroup
+#forkheavy
 
 # selected stressors
 access 1             # low cpu usage
@@ -79,7 +85,10 @@ chmod  1             # low cpu usage
 chown  1             # low cpu usage
 chroot 1
 dev    1             # low cpu usage
-epoll  1
+eventfd 1
+fallocate 1
+flock     1
+fork      1
 pci    1
 
 ##########################################################

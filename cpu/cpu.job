@@ -2,25 +2,25 @@
 # core count
 ##########################################################
 #low-cpu usage:
-#  1. access
-#  2. chattr
-#  3. chdir
-#  4. chmod
-#  5. chown
-#  6. dev       0.5x
-#  7. eventfd   0.6x
-#  8. fallocate
-#  9. flock
-#  10. fork
+#  1.     access
+#  2.     chattr
+#  3.     chdir
+#  4.     chmod
+#  5.     chown
+#  6.     dev       0.5x
+#  7.     eventfd   0.6x
+#  8.     fallocate
+#  9.     flock
+#  10.    fork
 #  11-12. iomix
-#  13. vm
+#  13.    vm
 #
 #high-cpu usage:
-#  1.   bigheap
-#  2.   memcpy
-#  3.   malloc
-#  4.   chroot
-#  5.   pci
+#  1.     bigheap
+#  2.     memcpy
+#  3.     malloc
+#  4.     chroot
+#  5.     pci
 #
 #remaining cores: matrix
 
@@ -35,7 +35,7 @@ timeout 30m        # stop each stressor after 60 seconds
 ##########################################################
 # output options
 ##########################################################
-#verbose          # verbose output
+#verbose
 metrics          # show metrics at end of run
 timestamp        # timestamp log output
 tz               # collect temperature
@@ -78,22 +78,22 @@ iomix 2              # low cpu usage
 #forkheavy
 
 # selected stressors
-access 1             # low cpu usage
-chattr 1             # low cpu usage
-chdir  1             # low cpu usage
-chmod  1             # low cpu usage
-chown  1             # low cpu usage
-chroot 1
-dev    1             # low cpu usage
-eventfd 1
-fallocate 1
-flock     1
-fork      1
-pci    1
+access      1        # low cpu usage
+chattr      1        # low cpu usage
+chdir       1        # low cpu usage
+chmod       1        # low cpu usage
+chown       1        # low cpu usage
+chroot      1
+dev         1        # low cpu usage
+eventfd     1
+fallocate   1
+flock       1
+fork        1
+pci         1
 
 ##########################################################
 # cpu stressors
 ##########################################################
 
 # use matrix on remaining cores to keep cpus at 100%
-#matrix 50
+#matrix      50

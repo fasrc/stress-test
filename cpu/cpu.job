@@ -29,7 +29,7 @@
 ##########################################################
 run parallel      # run stressors in parallel
 #timeout 3h         # stop each stressor after 60 seconds
-timeout 30m        # stop each stressor after 60 seconds
+timeout 60s        # stop each stressor after 60 seconds
 #pathological      # needed for bind-mount
 
 ##########################################################
@@ -51,11 +51,11 @@ memcpy  1
 
 # malloc stressor options
 malloc 1
-malloc-bytes 90%     # 95% of available memory
+malloc-bytes 90%     # 90% of available memory
 
 # vm stressor options
 vm 1                 # low cpu usage
-vm-bytes 90%         # 95% of available memory
+vm-bytes 90%         # 90% of available memory
 vm-keep              # keep vm mapping
 vm-populate          # populate memory
 
@@ -68,9 +68,12 @@ iomix 2              # low cpu usage
 ##########################################################
 # os/kernel stressors
 ##########################################################
-#bind-mount 1        # requires --pathological, may hang machine
+#bind-mount 1        # requires --pathological, likely to hang machine
 #epoll      1        # too intensive, may affect other stressors
 #fifo       1        # too intensive, 3 min test took 33 min, affects other stressors
+#fstat      1        # huge mem usage, 3x cpu usage
+#loadavg    1        # too too intensive, 50x cpu usage
+#madvise    1        # too intensive, 4x cpu usage
 
 # not available on Rocky 8.10, but available on Rocky 9
 #acl

@@ -1,0 +1,8 @@
+# Ignore vim files:
+*~
+*.swp
+*.swo
+
+# Ignore output folders
+cpu_output/
+gpu_output/

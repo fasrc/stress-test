@@ -31,6 +31,8 @@ run parallel      # run stressors in parallel
 #timeout 3h         # stop each stressor after 60 seconds
 timeout 60s        # stop each stressor after 60 seconds
 #pathological      # needed for bind-mount
+temp-path /scratch/  # specify path for temporary directories and files
+oom-avoid            # try to avoid stressors from being OOM'
 
 ##########################################################
 # output options
@@ -51,11 +53,11 @@ memcpy  1
 
 # malloc stressor options
 malloc 1
-malloc-bytes 90%     # 90% of available memory
+malloc-bytes 50%     # 50% of available memory
 
 # vm stressor options
 vm 1                 # low cpu usage
-vm-bytes 90%         # 90% of available memory
+vm-bytes 50%         # 50% of available memory
 vm-keep              # keep vm mapping
 vm-populate          # populate memory
 

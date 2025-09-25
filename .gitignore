@@ -4,5 +4,5 @@
 *.swo
 
 # Ignore output folders
-cpu_output/
-gpu_output/
+cpu_node/output/
+gpu_node/output/

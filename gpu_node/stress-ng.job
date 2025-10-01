@@ -27,20 +27,17 @@
 ##########################################################
 # run options
 ##########################################################
-run parallel      # run stressors in parallel
-#timeout 3h         # stop each stressor after 60 seconds
-timeout 60s        # stop each stressor after 60 seconds
-#pathological      # needed for bind-mount
+run parallel         # run stressors in parallel
 temp-path /scratch/  # specify path for temporary directories and files
 oom-avoid            # try to avoid stressors from being OOM'
 
 ##########################################################
 # output options
 ##########################################################
-#verbose
-metrics          # show metrics at end of run
-timestamp        # timestamp log output
-tz               # collect temperature
+metrics              # show metrics at end of run
+timestamp            # timestamp log output
+tz                   # collect temperature
+stdout               # outputs to stdout (default is stderr)
 
 ##########################################################
 # memory stressors
@@ -64,7 +61,6 @@ vm-populate          # populate memory
 ##########################################################
 # io stressors
 ##########################################################
-
 iomix 2              # low cpu usage
 
 ##########################################################
@@ -99,6 +95,6 @@ pci         1
 ##########################################################
 # cpu stressors
 ##########################################################
-
 # use matrix on remaining cores to keep cpus at 100%
-#matrix      50
+# matrix is called from slurm script
+

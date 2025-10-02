@@ -9,8 +9,8 @@ Usage: ./stress_gpu_nodes.sh -f <list_of_nodes> [-r <reservation_name>] -t <time
   flag    argument          comment
     -f    list_of_nodes     text file containing list of nodes to stress
                             one node name per line
-    -t    time_in_minutes   time to run stress test, in minutes
     -r    reservation       (optional) reservation name
+    -t    time_in_minutes   time to run stress test, in minutes
     -y                      add -y to actually submit the job
                             without -y is a dry run
 "
@@ -35,12 +35,8 @@ while getopts ":f:hr:t:y" opt; do
 	:)  echo "Error: Option -$OPTARG requires an argument."
             exit 1
         ;;
-	*)  echo -n "$helpstr"
-	    exit 1
-            ;;
   esac
 done
-
 
 echo "========= All nodes summary =========="
 echo "run_time          ${run_time} minutes"
@@ -59,7 +55,6 @@ else
     sbatch_cpu_args="--reservation ${reservation}"
     sbatch_gpu_args="--reservation ${reservation}"
 fi
-
 
 while read nodename; do
     # get primary partition that node belongs to

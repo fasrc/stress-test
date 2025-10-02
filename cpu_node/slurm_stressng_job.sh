@@ -22,7 +22,7 @@ cat stress-ng.job
 # calculate stress-ng run time
 # use SLURM_JOB_END_TIME to
 current_time=$(date +%s)
-stressng_time_sec=$(echo "${SLURM_JOB_END_TIME} - ${current_time} - 600" | bc)
+stressng_time_sec=$(echo "${SLURM_JOB_END_TIME} - ${current_time} - 1800" | bc)
 
 # run
 echo "--------------------------------------------------------------------------------"
@@ -30,5 +30,6 @@ echo " stress-ng output"
 echo "--------------------------------------------------------------------------------"
 echo "stress-ng run time ${stressng_time_sec} seconds"
 cd /odyssey/stress_nodes/stress-ng
+./stress-ng --version
 ./stress-ng --matrix ${n_matrix} --timeout ${stressng_time_sec}s --job /odyssey/paulasan/stress-test/cpu_node/stress-ng.job
 

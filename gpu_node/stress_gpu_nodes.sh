@@ -1,10 +1,12 @@
 #!/bin/bash
 
-helpstr="\
-stress_gpu_node.sh gathers node information and submits a slurm job stress-ng 
-to stress a cpu node (memory, cpu, and kernel)
+script_name=$(basename "$0")
 
-Usage: ./stress_gpu_nodes.sh -f <list_of_nodes> [-r <reservation_name>] -t <time_in_minutes> -y [-h for help]
+helpstr="\
+${script_name} gathers node information and submits two slurm jobs (stress-ng and gpu-burn)
+to stress a gpu node (memory, cpu, kernel, local storage, and gpu)
+
+Usage: ${script_name} -f <list_of_nodes> [-r <reservation_name>] -t <time_in_minutes> -y [-h for help]
 
   flag    argument          comment
     -f    list_of_nodes     text file containing list of nodes to stress
@@ -14,29 +16,51 @@ Usage: ./stress_gpu_nodes.sh -f <list_of_nodes> [-r <reservation_name>] -t <time
     -y                      add -y to actually submit the job
                             without -y is a dry run
 "
+# check for no arguments
+if [ $# -eq 0 ]; then
+    echo "$helpstr"
+    exit 0
+fi
 
-while getopts ":f:hr:t:y" opt; do
+# initialize submit_job
+submit_job=false
+
+while getopts "f:hr:t:y" opt; do
   case $opt in
-	f) node_list_file="$OPTARG" 
-	;;
-	h) echo -n "$helpstr" 
-	   exit 0
-	;;
-	r) reservation="$OPTARG" 
-	;;
-	t) run_time="$OPTARG"
-	;;
-	y) submit_job=true
-	;;
-	\?) echo "Invalid option: $OPTARG"
-	    echo -n "$helpstr"
-	    exit 1
-	;;
-	:)  echo "Error: Option -$OPTARG requires an argument."
-            exit 1
-        ;;
+        f) node_list_file="$OPTARG" ;;
+        h) echo -n "$helpstr"
+           exit 0 ;;
+        r) reservation="$OPTARG" ;;
+        t) run_time="$OPTARG" ;;
+        y) submit_job=true ;;
+        \?) echo "Invalid option: -$OPTARG"
+            echo "$helpstr"
+            exit 1 ;;
+        :)  echo "Error: Option -$OPTARG requires an argument."
+            echo "$helpstr"
+            exit 1 ;;
   esac
 done
+
+# check input
+if [[ -z "${node_list_file}" ]]; then
+    echo "Error: Must specify node list file (-f)"
+    echo "$helpstr"
+    exit 1
+fi
+if [[ ! -f "${node_list_file}" ]]; then
+    echo "Error: Node list file '${node_list_file}' does not exist."
+    exit 1
+fi
+if [[ -z "${run_time}" ]]; then
+    echo "Error: Must specify run time (-t) in minutes"
+    echo "$helpstr"
+    exit 1
+fi
+if ! [[ "${run_time}" =~ ^[0-9]+$ ]]; then
+    echo "Error: Time (-t) must be an integer (minutes)"
+    exit 1
+fi
 
 echo "========= All nodes summary =========="
 echo "run_time          ${run_time} minutes"
@@ -57,6 +81,13 @@ else
 fi
 
 while read nodename; do
+    # check node exists
+    scontrol_output=$(scontrol show node ${nodename} | awk -F ' ' '{print $3}')
+    if [[ "${scontrol_output}" == "not" ]]; then
+        echo "Error: node ${nodename} does not exist. Update ${node_list_file}."
+        exit 1
+    fi
+
     # get primary partition that node belongs to
     job_partition=$(scontrol show node ${nodename} | grep Partitions | awk -F '=' '{print $2}' | awk -F ',' '{print $1}')
     
@@ -79,6 +110,12 @@ while read nodename; do
     
     # get total number of gpu cards
     n_gpus=$(scontrol show node ${nodename} | grep Gres | awk -F ':' '{print $3}' | awk -F '(' '{print $1}')
+
+    # check that node has gpus
+    if [[ -z "${n_gpus}" ]]; then
+        echo "Error: ${nodename} does not have any gpus."
+	exit 1
+    fi
     
     # get total number of cores
     total_cpus=$(scontrol show node ${nodename} | grep CPUTot | awk -F '=' '{print $4}' | awk -F ' ' '{print $1}')

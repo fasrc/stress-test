@@ -2,7 +2,6 @@
 #SBATCH -J stress-ng
 #SBATCH -o /odyssey/paulasan/stress-test/cpu_node/output/%N_%j.out      # %N nodename, %j jobid
 #SBATCH -e /odyssey/paulasan/stress-test/cpu_node/output/%N_%j.err      # %N nodename, %j jobid
-#SBATCH --reservation=cpu_burn
 
 # this job stress the cpu, memory, and kernel
 

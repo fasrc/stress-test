@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J stress-ng
-#SBATCH -o /odyssey/paulasan/stress-test/gpu_node/output/%N_%j.out      # %N nodename, %j jobid
-#SBATCH -e /odyssey/paulasan/stress-test/gpu_node/output/%N_%j.err      # %N nodename, %j jobid
+#SBATCH -o /odyssey/stress_nodes/stress-test/gpu_node/output/%N_%j.out      # %N nodename, %j jobid
+#SBATCH -e /odyssey/stress_nodes/stress-test/gpu_node/output/%N_%j.err      # %N nodename, %j jobid
 
 # this job stresses the cpu, memory, and kernel, and local io
 
@@ -31,5 +31,5 @@ echo "--------------------------------------------------------------------------
 echo "stress-ng run time ${stressng_time_sec} seconds"
 cd /odyssey/stress_nodes/stress-ng
 ./stress-ng --version 
-./stress-ng --matrix ${n_matrix} --timeout ${stressng_time_sec}s --job /odyssey/paulasan/stress-test/gpu_node/stress-ng.job
+./stress-ng --matrix ${n_matrix} --timeout ${stressng_time_sec}s --job /odyssey/stress_nodes/stress-test/gpu_node/stress-ng.job
 

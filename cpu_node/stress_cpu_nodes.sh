@@ -76,7 +76,6 @@ if [ -z "${reservation+set}" ]; then
     echo "reservation       (empty)"
 else
     echo "reservation       ${reservation}"
-    sbatch_args="--reservation ${reservation}"
 fi
 
 while read nodename; do
@@ -85,6 +84,13 @@ while read nodename; do
     if [[ "${scontrol_output}" == "not" ]]; then
         echo "Error: node ${nodename} does not exist. Update ${node_list_file}."
         exit 1
+    fi
+
+    # initialize sbatch_args
+    sbatch_args=""
+
+    if [ ! -z "${reservation+set}" ]; then
+        sbatch_args="--reservation ${reservation}"
     fi
 
     # get primary partition that node belongs to

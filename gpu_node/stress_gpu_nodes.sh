@@ -76,8 +76,6 @@ if [ -z "${reservation+set}" ]; then
     echo "reservation       (empty)"
 else
     echo "reservation       ${reservation}"
-    sbatch_cpu_args="--reservation ${reservation}"
-    sbatch_gpu_args="--reservation ${reservation}"
 fi
 
 while read nodename; do
@@ -86,6 +84,15 @@ while read nodename; do
     if [[ "${scontrol_output}" == "not" ]]; then
         echo "Error: node ${nodename} does not exist. Update ${node_list_file}."
         exit 1
+    fi
+
+    # initialize variables
+    sbatch_cpu_args=""
+    sbatch_gpu_args=""
+
+    if [ ! -z "${reservation+set}" ]; then
+        sbatch_cpu_args="--reservation ${reservation}"
+        sbatch_gpu_args="--reservation ${reservation}"
     fi
 
     # get primary partition that node belongs to

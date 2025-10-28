@@ -62,6 +62,12 @@ if ! [[ "${run_time}" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+if [ "${submit_job}" = false ] ; then
+    echo "######################################"
+    echo "               DRY RUN"
+    echo "######################################"
+fi
+
 echo "========= All nodes summary =========="
 echo "run_time          ${run_time} minutes"
 echo "node_list_file    ${node_list_file}"
@@ -156,6 +162,10 @@ while read nodename; do
     gpu_job_cpus=$(echo "${n_gpus} / 2" | bc)
     cpu_job_cpus=$(echo "${total_cpus} - ${gpu_job_cpus}" | bc)
 
+    # standard output and error file
+    output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.out
+    error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.err
+
     ## write summary
     echo "    nodename          ${nodename}"
     echo "    job_partition     ${job_partition}"
@@ -167,15 +177,22 @@ while read nodename; do
     echo "        cpu_job_cpus  ${cpu_job_cpus}"
     echo "    n_gpus            ${n_gpus}"
     
-    # save arguments
+    # combine sbatcharguments
     sbatch_gpu_args="${sbatch_gpu_args} --time=${run_time} --partition ${job_partition} --mem ${gpu_job_mem} -c ${gpu_job_cpus} --nodelist ${nodename} --gres=gpu:${n_gpus}"
+    sbatch_gpu_args="${sbatch_gpu_args} -o ${output_file} -e ${error_file}"
+
     sbatch_cpu_args="${sbatch_cpu_args} --time=${run_time} --partition ${job_partition} --mem ${cpu_job_mem} -c ${cpu_job_cpus} --nodelist ${nodename}"
+    sbatch_cpu_args="${sbatch_cpu_args} -o ${output_file} -e ${error_file}"
 
     if [ "${submit_job}" = true ] ; then
         # submit gpu job
+        echo "    Submitting gpu job with:"
+        echo "        sbatch ${sbatch_gpu_args} slurm_gpuburn_job.sh"
         sbatch ${sbatch_gpu_args} slurm_gpuburn_job.sh
         
         # submit cpu job
+        echo "    Submitting cpu job with:"
+        echo "        sbatch ${sbatch_cpu_args} slurm_stressng_job.sh"
         sbatch ${sbatch_cpu_args} slurm_stressng_job.sh
     else
 	echo " "

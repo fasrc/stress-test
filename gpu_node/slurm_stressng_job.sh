@@ -1,7 +1,5 @@
 #!/bin/bash
 #SBATCH -J stress-ng
-#SBATCH -o /odyssey/stress_nodes/stress-test/gpu_node/output/%N_%j.out      # %N nodename, %j jobid
-#SBATCH -e /odyssey/stress_nodes/stress-test/gpu_node/output/%N_%j.err      # %N nodename, %j jobid
 
 # this job stresses the cpu, memory, and kernel, and local io
 

@@ -62,6 +62,13 @@ if ! [[ "${run_time}" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+if [ "${submit_job}" = false ] ; then
+    echo "######################################"
+    echo "               DRY RUN"
+    echo "######################################"
+fi
+
+echo "========= All nodes summary =========="
 echo "========= All nodes summary =========="
 echo "run_time          ${run_time} minutes"
 echo "node_list_file    ${node_list_file}"
@@ -132,16 +139,24 @@ while read nodename; do
         total_cpus=$(echo "${total_cpus} - ${slurm_cpus}" | bc)
     fi
 
+    # standard output and error file
+    output_file=/odyssey/stress_nodes/stress-test/cpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.out
+    error_file=/odyssey/stress_nodes/stress-test/cpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.err
+
     ## write summary
     echo "    nodename          ${nodename}"
     echo "    job_partition     ${job_partition}"
     echo "    slurm_mem         ${slurm_mem}"
     echo "    total_cpus        ${total_cpus}"
 
+    # combine sbatch arguments
     sbatch_args="${sbatch_args} --time=${run_time} --partition ${job_partition} --mem=${slurm_mem} -c ${total_cpus} --nodelist ${nodename}"
+    sbatch_args="${sbatch_args} -o ${output_file} -e ${error_file}"
 
     # submit cpu job
     if [ "${submit_job}" = true ] ; then
+        echo "    Submitting job with:"
+        echo "        sbatch ${sbatch_args} slurm_stressng_job.sh"
         sbatch ${sbatch_args} slurm_stressng_job.sh
     else
         echo " "

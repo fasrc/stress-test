@@ -1,10 +1,8 @@
 #!/bin/bash
 #SBATCH -J gpu-burn                  # job name
-#SBATCH -o /odyssey/stress_nodes/stress-test/gpu_node/output/%N_%j.out          # %N nodename, %j jobid
-#SBATCH -e /odyssey/stress_nodes/stress-test/gpu_node/output/%N_%j.err          # %N nodename, %j jobid
 
-# stress-ng log file
-output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/gpu-burn-${SLURM_NODELIST}-${SLURM_JOBID}.txt
+# stress-ng log file (goes to the same folder as std out and err)
+output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/${SLURM_JOBID}_${SLURM_NODELIST}_gpuburn.txt
 
 # calculate gpu-burn run time
 # use SLURM_JOB_END_TIME to calculate remaining time

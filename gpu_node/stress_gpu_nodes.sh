@@ -79,10 +79,15 @@ else
 fi
 
 while read nodename; do
+    echo "--------- per node summary -----------"
+
+    # save scontrol output
+    scontrol_output=$(scontrol show node ${nodename})
+
     # check node exists
-    scontrol_output=$(scontrol show node ${nodename} | awk -F ' ' '{print $3}')
-    if [[ "${scontrol_output}" == "not" ]]; then
-        echo "Error: node ${nodename} does not exist. Update ${node_list_file}."
+    node_output=$(echo ${scontrol_output} | awk -F ' ' '{print $3}')
+    if [[ "${node_output}" == "not" ]]; then
+        echo "**Error**: node ${nodename} does not exist. Update ${node_list_file}."
         exit 1
     fi
 
@@ -96,13 +101,13 @@ while read nodename; do
     fi
 
     # get primary partition that node belongs to
-    job_partition=$(scontrol show node ${nodename} | grep Partitions | awk -F '=' '{print $2}' | awk -F ',' '{print $1}')
+    job_partition=$(echo ${scontrol_output} | tr ' ' '\n' | grep Partitions | awk -F '=' '{print $2}' | awk -F ',' '{print $1}')
     
     # get total mem on the node
-    total_mem=$(scontrol show node ${nodename} | grep RealMemory | awk -F ' ' '{print $1}' | awk -F '=' '{print $2}')
+    total_mem=$(echo ${scontrol_output} | tr ' ' '\n' | grep RealMemory | awk -F ' ' '{print $1}' | awk -F '=' '{print $2}')
     
     # get mem reserved for slurm/os
-    os_mem=$(scontrol show node ${nodename} | grep MemSpecLimit | awk -F ' ' '{print $1}' | awk -F '=' '{print $2}')
+    os_mem=$(echo ${scontrol_output} | tr ' ' '\n' | grep MemSpecLimit | awk -F ' ' '{print $1}' | awk -F '=' '{print $2}')
     
     # calculate amount of memory available for jobs
     slurm_mem=$(echo "${total_mem} - ${os_mem}" | bc)
@@ -116,7 +121,7 @@ while read nodename; do
     cpu_job_mem=$(echo "${slurm_mem} - ${gpu_job_mem}" | bc)
     
     # get total number of gpu cards
-    n_gpus=$(scontrol show node ${nodename} | grep Gres | awk -F ':' '{print $3}' | awk -F '(' '{print $1}')
+    n_gpus=$(echo ${scontrol_output} | tr ' ' '\n' | grep Gres | awk -F ':' '{print $3}' | awk -F '(' '{print $1}')
 
     # check that node has gpus
     if [[ -z "${n_gpus}" ]]; then
@@ -125,15 +130,21 @@ while read nodename; do
     fi
     
     # get total number of cores
-    total_cpus=$(scontrol show node ${nodename} | grep CPUTot | awk -F '=' '{print $4}' | awk -F ' ' '{print $1}')
-    
+    total_cpus=$(echo ${scontrol_output} | tr ' ' '\n' | grep CPUTot | awk -F '=' '{print $2}')
+
+    # checked if any cores are reserved for slurm
+    slurm_cpus=$(echo ${scontrol_output} | tr ' ' '\n' | grep CoreSpecCount | awk -F '=' '{print $2}')
+
+    if [[ "${slurm_cpus}" -gt 0 ]]; then
+        total_cpus=$(echo "${total_cpus} - ${slurm_cpus}" | bc)
+    fi
+
     # calculate cores for each job
     # based on tests, we can use 2 gpus per core without decreasing Gflops
     gpu_job_cpus=$(echo "${n_gpus} / 2" | bc)
     cpu_job_cpus=$(echo "${total_cpus} - ${gpu_job_cpus}" | bc)
 
     ## write summary
-    echo "--------- per node summary -----------"
     echo "    nodename          ${nodename}"
     echo "    job_partition     ${job_partition}"
     echo "    slurm_mem         ${slurm_mem}"

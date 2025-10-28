@@ -100,6 +100,18 @@ while read nodename; do
 
     # get primary partition that node belongs to
     job_partition=$(echo ${scontrol_output} | tr ' ' '\n' | grep Partitions | awk -F '=' '{print $2}' | awk -F ',' '{print $1}')
+
+    # exit if partition is serial_requeue
+    if [[ "${job_partition}" == "serial_requeue" ]]; then
+      echo "**Error**: job_partition is serial_requeue. Exiting."
+      exit 1
+    fi
+
+    # exit if partition is gpu_requeue
+    if [[ "${job_partition}" == "gpu_requeue" ]]; then
+      echo "**Error**: job_partition is gpu_requeue. Exiting."
+      exit 1
+    fi
     
     # get total mem on the node
     total_mem=$(echo ${scontrol_output} | tr ' ' '\n' | grep RealMemory | awk -F ' ' '{print $1}' | awk -F '=' '{print $2}')

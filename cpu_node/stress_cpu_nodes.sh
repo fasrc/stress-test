@@ -109,6 +109,12 @@ while read nodename; do
     # get list of partitions that node belongs to
     partition_list=$(echo ${scontrol_output} | tr ' ' '\n' | grep Partitions | awk -F '=' '{print $2}')
 
+    # check that node belongs to a partition
+    if [[ -z "${partition_list}" ]]; then
+        echo "Error: ${nodename} does not belong to any partition."
+	exit 1
+    fi
+
     # get a non-requeue partition to avoid preemption
     for i in ${partition_list//,/ }
         do

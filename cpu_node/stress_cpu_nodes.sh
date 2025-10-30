@@ -71,7 +71,6 @@ if [ "${submit_job}" = false ] ; then
 fi
 
 echo "========= All nodes summary =========="
-echo "========= All nodes summary =========="
 echo "run_time          ${run_time} minutes"
 echo "node_list_file    ${node_list_file}"
 

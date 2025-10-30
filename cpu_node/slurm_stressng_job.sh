@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH -J stress-ng
 
-# this job stress the cpu, memory, and kernel
+# this job stress the cpu, memory, local io, and kernel
 
 # calculate number of cores for matrix stressor
-# high- and low-usage cpu cores are listed at the top of cpu.job file
-# this is based on: n_matrix= (total cores)       - (high-usage cpu cores) - (low-cpu usage cores)
-#                           = SLURM_CPUS_PER_TASK -           5            - (        13         )
-#n_matrix=$(echo "${SLURM_CPUS_PER_TASK} - 13" | bc)
+# high- and low-usage cpu cores are listed at the top of stress-ng.job file
+# this started with: n_matrix= (total cores) - (high-usage cpu cores) - (low-cpu usage cores)
+#                            = SLURM_CPUS_PER_TASK - 5 - 13
+# Paula found that 13 cores for stressors other than matrix works well
 n_matrix=$((${SLURM_CPUS_PER_TASK} - 13))
 
 # output stress-ng.job to stdout for full run details
@@ -18,8 +18,9 @@ cat stress-ng.job
 
 # calculate stress-ng run time
 # use SLURM_JOB_END_TIME to
+buffer_time=1800         # time in seconds to allow job to finish
 current_time=$(date +%s)
-stressng_time_sec=$(echo "${SLURM_JOB_END_TIME} - ${current_time} - 1800" | bc)
+stressng_time_sec=$(echo "${SLURM_JOB_END_TIME} - ${current_time} - ${buffer_time}" | bc)
 
 # run
 echo "--------------------------------------------------------------------------------"

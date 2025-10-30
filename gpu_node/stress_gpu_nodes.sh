@@ -12,7 +12,9 @@ Usage: ${script_name} -f <list_of_nodes> [-r <reservation_name>] -t <time_in_min
     -f    list_of_nodes     text file containing list of nodes to stress
                             one node name per line
     -r    reservation       (optional) reservation name
-    -t    time_in_minutes   time to run stress test, in minutes
+    -t    time_in_minutes   time > 30 to run stress test, in minutes
+                            30 min is a buffer time to allow the job to finish cleanly
+                            you may adjust buffer_time on the slurm* scripts
     -y                      add -y to actually submit the job
                             without -y is a dry run
 "

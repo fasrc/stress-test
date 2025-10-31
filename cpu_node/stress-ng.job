@@ -12,8 +12,8 @@
 #  8.     fallocate
 #  9.     flock
 #  10.    fork
-#  11-12. iomix
-#  13.    vm
+#  11.    iomix
+#  12.    vm
 #
 #high-cpu usage:
 #  1.     bigheap
@@ -61,7 +61,8 @@ vm-populate          # populate memory
 ##########################################################
 # io stressors
 ##########################################################
-iomix 2              # low cpu usage
+iomix 1              # low cpu usage
+iomix-bytes 80%
 
 ##########################################################
 # os/kernel stressors

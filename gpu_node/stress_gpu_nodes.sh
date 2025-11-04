@@ -190,14 +190,14 @@ while read nodename; do
     sbatch_cpu_args="${sbatch_cpu_args} -o ${output_file} -e ${error_file}"
 
     if [ "${submit_job}" = true ] ; then
-        # submit gpu job
-        echo "    Submitting gpu job with:"
+        # show how jobs are submitted
+        echo "    Submitting gpu and cpu jobs with:"
         echo "        sbatch ${sbatch_gpu_args} slurm_gpuburn_job.sh"
-        sbatch ${sbatch_gpu_args} slurm_gpuburn_job.sh
-        
-        # submit cpu job
-        echo "    Submitting cpu job with:"
         echo "        sbatch ${sbatch_cpu_args} slurm_stressng_job.sh"
+
+	# submit jobs
+        echo "========= Jobs submitted ============="
+        sbatch ${sbatch_gpu_args} slurm_gpuburn_job.sh
         sbatch ${sbatch_cpu_args} slurm_stressng_job.sh
     else
 	echo " "

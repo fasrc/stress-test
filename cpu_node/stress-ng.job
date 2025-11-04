@@ -48,16 +48,6 @@ stdout               # outputs to stdout (default is stderr)
 bigheap 1
 memcpy  1
 
-# malloc stressor options
-malloc 1
-malloc-bytes 50%     # 50% of available memory
-
-# vm stressor options
-vm 1                 # low cpu usage
-vm-bytes 50%         # 50% of available memory
-vm-keep              # keep vm mapping
-vm-populate          # populate memory
-
 ##########################################################
 # io stressors
 ##########################################################
@@ -98,4 +88,3 @@ pci         1
 ##########################################################
 # use matrix on remaining cores to keep cpus at 100%
 # matrix is called from slurm script
-

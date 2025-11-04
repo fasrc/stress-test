@@ -168,8 +168,10 @@ while read nodename; do
     cpu_job_cpus=$(echo "${total_cpus} - ${gpu_job_cpus}" | bc)
 
     # standard output and error file
-    output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.out
-    error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.err
+    gpu_output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.out
+    gpu_error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.err
+    cpu_output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N_stressng.out
+    cpu_error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N_stressng.err
 
     ## write summary
     echo "    nodename          ${nodename}"
@@ -184,10 +186,10 @@ while read nodename; do
     
     # combine sbatcharguments
     sbatch_gpu_args="${sbatch_gpu_args} --time=${run_time} --partition ${job_partition} --mem ${gpu_job_mem} -c ${gpu_job_cpus} --nodelist ${nodename} --gres=gpu:${n_gpus}"
-    sbatch_gpu_args="${sbatch_gpu_args} -o ${output_file} -e ${error_file}"
+    sbatch_gpu_args="${sbatch_gpu_args} -o ${gpu_output_file} -e ${gpu_error_file}"
 
     sbatch_cpu_args="${sbatch_cpu_args} --time=${run_time} --partition ${job_partition} --mem ${cpu_job_mem} -c ${cpu_job_cpus} --nodelist ${nodename}"
-    sbatch_cpu_args="${sbatch_cpu_args} -o ${output_file} -e ${error_file}"
+    sbatch_cpu_args="${sbatch_cpu_args} -o ${cpu_output_file} -e ${cpu_error_file}"
 
     if [ "${submit_job}" = true ] ; then
         # show how jobs are submitted

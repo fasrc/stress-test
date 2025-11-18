@@ -38,6 +38,7 @@ metrics              # show metrics at end of run
 timestamp            # timestamp log output
 tz                   # collect temperature
 stdout               # outputs to stdout (default is stderr)
+thermalstat 3600     # output temperatures every 3600 seconds (1h)
 
 ##########################################################
 # memory stressors

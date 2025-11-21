@@ -32,33 +32,35 @@ You may install your own version or you may use the installed software in
 ### stress-ng
 
 Install from source (see note below for reason).
+
+```bash
+$ git clone --single-branch https://github.com/ColinIanKing/stress-ng.git
+$ cd stress-ng/
+$ make -j
+$ ./stress-ng --version
+stress-ng, version 0.19.04 (gcc 8.5.0, x86_64 Linux 4.18.0-513.18.1.el8_9.x86_64)
+```
+
 > [!NOTE]
 > I (Paula) attempted to use Podman container, but even running as `root`,
 > it didn't have enough privileges. I also tried to use the OS package from EPEL,
 > but it's behind a few versions and it contained a bug. Thus, I ended up
 > installing from source.
 
-```
-$  git clone --single-branch https://github.com/ColinIanKing/stress-ng.git
-...
-$ cd stress-ng/
-$ make -j
-...
-$ ./stress-ng --version
-stress-ng, version 0.19.04 (gcc 8.5.0, x86_64 Linux 4.18.0-513.18.1.el8_9.x86_64)
-```
-
 ### gpu-burn
 
 Choose the latest `cuda` and its `cudnn`. For example (as of Nov 2025):
 
 ```bash
-module load gcc/14.2.0-fasrc01
-module load cuda/12.9.1-fasrc01
-module load cudnn/9.10.2.21_cuda12-fasrc01
+$ git clone https://github.com/wilicc/gpu-burn.git
+$ cd gpu-burn
+$ module load gcc/14.2.0-fasrc01
+$ module load cuda/12.9.1-fasrc01
+$ module load cudnn/9.10.2.21_cuda12-fasrc01
 
 # when compiling gpu-burn, ensure that CUDAPATH and CCPATH are given
-make CUDAPATH=$CUDA_HOME CCPATH=/n/sw/helmod-rocky8/apps/Core/gcc/14.2.0-fasrc01/bin
+$ make CUDAPATH=$CUDA_HOME CCPATH=/n/sw/helmod-rocky8/apps/Core/gcc/14.2.0-fasrc01/bin
+$ ./gpu_burn -h
 ```
 
 ## How to run

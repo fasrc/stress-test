@@ -78,8 +78,13 @@ stressng_status_list = []
 filename_list        = []
 req_run_time_list    = []
 final_run_time_list  = []
+stressng_max_temp_list = []
 if node_type=="gpu":
     gpuburn_status   = []
+
+# list for temperature plot
+stressng_T1            = []
+stressng_T2            = []
 
 # -------------------------------
 # look for stress-ng errors
@@ -93,6 +98,9 @@ for filename in os.listdir(folder_path):
         filename_list.append(filename)
         if debug: print("File: " + filename )
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+
+            # initialize variables
+            max_temp = 0
 
             # gather run information
             jobID, nodename = filename.split("_")
@@ -116,7 +124,6 @@ for filename in os.listdir(folder_path):
                 # print more details
                 if detail:
                     if debug: print("    Getting details of " + filename)
-                    max_temp = 0
                     for i, line in enumerate(all_text.splitlines(), 1):
                         # get requested run time
                         if "stress-ng run time" in line:
@@ -135,6 +142,31 @@ for filename in os.listdir(folder_path):
                                             slurm_time_format(final_run_time_sec))
                             final_run_time_list.append(slurm_time_format(final_run_time_sec))
 
+                        # get max temperature
+                        T1 = 0
+                        T2 = 0
+                        T3 = 0
+                        # temperature printed every so often
+                        if "therm: " in line:
+                            last_column = line.split(" ")[-1]
+                            # check that it's not a header
+                            if(last_column != "x86_pk"):
+                                T1 = float(last_column)
+                                T2 = float(line.split(" ")[-3])
+                            # store temperatures in the list
+                            stressng_T1.append(T1)
+                            stressng_T2.append(T2)
+                            if(T1 > max_temp):
+                                    max_temp = T1
+                            if(T2 > max_temp):
+                                    max_temp = T2
+                        # temperature at the end of the run
+                        if "x86_pkg_temp" in line:
+                            T3 = float(line.split(" ")[-4])
+                            if(T3 > max_temp):
+                                max_temp = T3
+                    stressng_max_temp_list.append(max_temp)
+
             # run did not finish
             else:
                 if debug: print("    Inside incomplete " + jobID)
@@ -151,6 +183,35 @@ for filename in os.listdir(folder_path):
                                             str(requested_run_time_sec) + " seconds or " + \
                                             slurm_time_format(requested_run_time_sec))
                             req_run_time_list.append(slurm_time_format(requested_run_time_sec))
+
+                        # get max temperature
+                        T1 = 0
+                        T2 = 0
+                        T3 = 0
+                        # temperature printed every so often
+                        if "therm: " in line:
+                            last_column = line.split(" ")[-1]
+                            # check that it's not a header
+                            if(last_column != "x86_pk"):
+                                T1 = float(last_column)
+                                T2 = float(line.split(" ")[-3])
+                            # store temperatures in the list
+                            stressng_T1.append(T1)
+                            stressng_T2.append(T2)
+                            if(T1 > max_temp):
+                                    max_temp = T1
+                            if(T2 > max_temp):
+                                    max_temp = T2
+                        # temperature at the end of the run
+                        if "x86_pkg_temp" in line:
+                            T3 = float(line.split(" ")[-4])
+                            if(T3 > max_temp):
+                                max_temp = T3
+                    # check if temperature is still zero (no temp available on output)
+                    if(max_temp < 0.1):
+                        stressng_max_temp_list.append("NA")
+                    else:
+                        stressng_max_temp_list.append(max_temp)
 
 
 if debug: print("")
@@ -179,26 +240,21 @@ if node_type=="cpu":
         printf("-----------------------------------------------\n")
     # detailed summary
     else:
-        printf("---------------------------------------------------------------")
-        printf("---------------------------------------------------------------")
-        printf("--------------------\n")
-        printf("           Node  job ID    stress-ng status  logfile (root dir above)   requested time   final time\n")
-        printf("---------------------------------------------------------------")
-        printf("---------------------------------------------------------------")
-        printf("--------------------\n")
+        printf("----------------------------------------------------------------------------------------------------------------\n")
+        printf("           Node  job ID    stress-ng       logfile                       requested     final         max temp\n")
+        printf("                           status          (root dir above)              run time      run time      (C)\n")
+        printf("----------------------------------------------------------------------------------------------------------------\n")
 
         for i in range(len(node_list)):
-            printf("%15s  %-8s  %-17s %-30s %-12s  %-12s\n", \
+            printf("%15s  %-8s  %-15s %-29s %-12s  %-12s  %-6s\n", \
                     node_list[i],            \
                     jobID_list[i],           \
                     stressng_status_list[i], \
                     filename_list[i],        \
                     req_run_time_list[i],    \
-                    final_run_time_list[i])
-
-        printf("---------------------------------------------------------------")
-        printf("---------------------------------------------------------------")
-        printf("--------------------\n")
+                    final_run_time_list[i],  \
+                    stressng_max_temp_list[i])
+        printf("----------------------------------------------------------------------------------------------------------------\n")
 
 # gpu nodes
 if node_type=="gpu":

@@ -7,6 +7,19 @@ import re
 def printf(format, *args):
     sys.stdout.write(format % args)
 
+def slurm_time_format(total_seconds: int):
+    """
+    Convert seconds to SLURM D-HH:MM:SS format.
+    Example: 258599 -> '2-23:43:19'
+    """
+    elapsed_time = datetime.timedelta(seconds=total_seconds)
+
+    days = elapsed_time.days
+    hours, remainder = divmod(elapsed_time.seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+
+    return f"{days}-{hours:02d}:{minutes:02d}:{secs:02d}"
+
 # -------------------------------
 # parse input arguments
 # -------------------------------
@@ -59,12 +72,14 @@ print("")
 #]
 
 # initialize summary lists
-node_list = []
-jobID_list = []
+node_list            = []
+jobID_list           = []
 stressng_status_list = []
-filename_list = []
+filename_list        = []
+req_run_time_list    = []
+final_run_time_list  = []
 if node_type=="gpu":
-    gpuburn_status = []
+    gpuburn_status   = []
 
 # -------------------------------
 # look for stress-ng errors
@@ -97,31 +112,45 @@ for filename in os.listdir(folder_path):
                 elif "failed: 0" in all_text.lower():
                     if debug: print("        Inside successful " + jobID)
                     stressng_status_list.append("success")
+
+                # print more details
+                if detail:
+                    print("Inside detail " + filename)
+                    for i, line in enumerate(all_text.splitlines(), 1):
+                        # get requested run time
+                        if "stress-ng run time" in line:
+                            print(f"    Found 'stress-ng run time' in {filename} at line {i}")
+                            print("    " + line)
+                            requested_run_time_sec = float(line.split(" ")[-2])
+                            print("    " + slurm_time_format(requested_run_time_sec))
+                            req_run_time_list.append(slurm_time_format(requested_run_time_sec))
+
+                        # get final run time (only for completed runs)
+                        if "s run time" in line:
+                            print("    " + line)
+                            print(line.split(" ")[-3])
+                            final_run_time_string = line.split(" ")[-3]
+                            final_run_time_sec = float(final_run_time_string.rstrip('s'))
+                            print("    " + slurm_time_format(final_run_time_sec))
+                            final_run_time_list.append(slurm_time_format(final_run_time_sec))
+
             # run did not finish
             else:
                 if debug: print("        Inside incomplete " + jobID)
                 stressng_status_list.append("incomplete run")
+                final_run_time_list.append("use sacct")
 
-            if detail:
-                print("Inside detail" + filename)
-                for lineno, line in enumerate(f, start=1):
-                    print(line)
-                    if "stress-ng run time" in line.lower():
-                        # rstrip() to remove trailing newline
-                        # print(f"'failed' found in: {filename} (line {lineno}): {line.rstrip()}")
-                        print("        'run' found in line " + str(lineno) + ": " + line)
-                for i, line in enumerate(all_text.splitlines(), 1):
-                    # get requested run time
-                    if "stress-ng run time" in line:
-                        print(f"Found 'stress-ng run time' in {filename} at line {i}")
-                        print(line)
-                        run_time_seconds = float(line.split(" ")[-2])
-                        run_time_formatted = datetime.timedelta(seconds=run_time_seconds)
-                        print(run_time_formatted)
+                if detail:
+                    print("Inside detail " + filename)
+                    for i, line in enumerate(all_text.splitlines(), 1):
+                        # get requested run time
+                        if "stress-ng run time" in line:
+                            print(f"    Found 'stress-ng run time' in {filename} at line {i}")
+                            print("    " + line)
+                            requested_run_time_sec = float(line.split(" ")[-2])
+                            print("    " + slurm_time_format(requested_run_time_sec))
+                            req_run_time_list.append(slurm_time_format(requested_run_time_sec))
 
-                # get final run time
-                if stressng_status_list[-1] != "incomplete run":
-                    print(line)
 
 if debug: print("")
 
@@ -140,21 +169,24 @@ if node_type=="cpu":
     # short summary
     if not detail:
         printf("-----------------------------------------------\n")
-        printf("           Node     job ID    stress-ng status \n")
+        printf("           Node  job ID    stress-ng status \n")
         printf("-----------------------------------------------\n")
 
         for i in range(len(node_list)):
-            printf("%15s %10s %19s\n", node_list[i], jobID_list[i], stressng_status_list[i])
+            printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
+            #printf("%15s %10s %19s\n", node_list[i], jobID_list[i], stressng_status_list[i])
 
         printf("-----------------------------------------------\n")
     # detailed summary
     else:
         printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n")
-        printf("           Node     job ID    stress-ng status logfile (root dir above)\n")
+        printf("           Node  job ID    stress-ng status  logfile (root dir above)   requested time   final time\n")
         printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
         for i in range(len(node_list)):
-            printf("%15s %10s %19s %s\n", node_list[i], jobID_list[i], stressng_status_list[i], filename_list[i])
+            printf("%15s  %-8s  %-17s %-30s %-12s  %-12s\n", \
+                    node_list[i], jobID_list[i], stressng_status_list[i], \
+                    filename_list[i], req_run_time_list[i], final_run_time_list[i])
 
         printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n")
 

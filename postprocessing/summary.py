@@ -91,7 +91,7 @@ for filename in os.listdir(folder_path):
     if filename.endswith(".out"):
         file_path = os.path.join(folder_path, filename)
         filename_list.append(filename)
-        if debug: print("    File: " + filename)
+        if debug: print("File: " + filename )
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
 
             # gather run information
@@ -106,49 +106,50 @@ for filename in os.listdir(folder_path):
             if "run completed in" in all_text.lower():
                 # check if unsuccessful run (stress-ng found failures)
                 if "unsuccessful run completed" in all_text.lower():
-                    if debug: print("        Inside unsuccessful " + jobID)
+                    if debug: print("    Inside unsuccessful " + jobID)
                     stressng_status_list.append("failed")
                 # a successful run
                 elif "failed: 0" in all_text.lower():
-                    if debug: print("        Inside successful " + jobID)
+                    if debug: print("    Inside successful " + jobID)
                     stressng_status_list.append("success")
 
                 # print more details
                 if detail:
-                    print("Inside detail " + filename)
+                    if debug: print("    Getting details of " + filename)
+                    max_temp = 0
                     for i, line in enumerate(all_text.splitlines(), 1):
                         # get requested run time
                         if "stress-ng run time" in line:
-                            print(f"    Found 'stress-ng run time' in {filename} at line {i}")
-                            print("    " + line)
                             requested_run_time_sec = float(line.split(" ")[-2])
-                            print("    " + slurm_time_format(requested_run_time_sec))
+                            if debug: print("        Requested run time: " +  \
+                                            str(requested_run_time_sec) + " seconds or " + \
+                                            slurm_time_format(requested_run_time_sec))
                             req_run_time_list.append(slurm_time_format(requested_run_time_sec))
 
                         # get final run time (only for completed runs)
                         if "s run time" in line:
-                            print("    " + line)
-                            print(line.split(" ")[-3])
                             final_run_time_string = line.split(" ")[-3]
                             final_run_time_sec = float(final_run_time_string.rstrip('s'))
-                            print("    " + slurm_time_format(final_run_time_sec))
+                            if debug: print("        Final run time: " +  \
+                                            str(final_run_time_sec) + " seconds or " + \
+                                            slurm_time_format(final_run_time_sec))
                             final_run_time_list.append(slurm_time_format(final_run_time_sec))
 
             # run did not finish
             else:
-                if debug: print("        Inside incomplete " + jobID)
+                if debug: print("    Inside incomplete " + jobID)
                 stressng_status_list.append("incomplete run")
                 final_run_time_list.append("use sacct")
 
                 if detail:
-                    print("Inside detail " + filename)
+                    if debug: print("    Getting details of " + filename)
                     for i, line in enumerate(all_text.splitlines(), 1):
                         # get requested run time
                         if "stress-ng run time" in line:
-                            print(f"    Found 'stress-ng run time' in {filename} at line {i}")
-                            print("    " + line)
                             requested_run_time_sec = float(line.split(" ")[-2])
-                            print("    " + slurm_time_format(requested_run_time_sec))
+                            if debug: print("        Requested run time: " +  \
+                                            str(requested_run_time_sec) + " seconds or " + \
+                                            slurm_time_format(requested_run_time_sec))
                             req_run_time_list.append(slurm_time_format(requested_run_time_sec))
 
 
@@ -174,21 +175,30 @@ if node_type=="cpu":
 
         for i in range(len(node_list)):
             printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
-            #printf("%15s %10s %19s\n", node_list[i], jobID_list[i], stressng_status_list[i])
 
         printf("-----------------------------------------------\n")
     # detailed summary
     else:
-        printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n")
+        printf("---------------------------------------------------------------")
+        printf("---------------------------------------------------------------")
+        printf("--------------------\n")
         printf("           Node  job ID    stress-ng status  logfile (root dir above)   requested time   final time\n")
-        printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n")
+        printf("---------------------------------------------------------------")
+        printf("---------------------------------------------------------------")
+        printf("--------------------\n")
 
         for i in range(len(node_list)):
             printf("%15s  %-8s  %-17s %-30s %-12s  %-12s\n", \
-                    node_list[i], jobID_list[i], stressng_status_list[i], \
-                    filename_list[i], req_run_time_list[i], final_run_time_list[i])
+                    node_list[i],            \
+                    jobID_list[i],           \
+                    stressng_status_list[i], \
+                    filename_list[i],        \
+                    req_run_time_list[i],    \
+                    final_run_time_list[i])
 
-        printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n")
+        printf("---------------------------------------------------------------")
+        printf("---------------------------------------------------------------")
+        printf("--------------------\n")
 
 # gpu nodes
 if node_type=="gpu":

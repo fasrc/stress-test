@@ -90,12 +90,14 @@ stressng_T2            = []
 # look for stress-ng errors
 # -------------------------------
 
+# number of files
+n = 0
 
 # look at all files in folder_path
 for filename in os.listdir(folder_path):
     if filename.endswith(".out"):
         file_path = os.path.join(folder_path, filename)
-        filename_list.append(filename)
+        filename_list.insert(n, filename)
         if debug: print("File: " + filename )
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
 
@@ -104,8 +106,8 @@ for filename in os.listdir(folder_path):
 
             # gather run information
             jobID, nodename = filename.split("_")
-            node_list.append(nodename.split(".")[0])
-            jobID_list.append(jobID)
+            node_list.insert(n, nodename.split(".")[0])
+            jobID_list.insert(n, jobID)
             
             # read an entire file
             all_text = f.read()
@@ -115,16 +117,16 @@ for filename in os.listdir(folder_path):
                 # check if unsuccessful run (stress-ng found failures)
                 if "unsuccessful run completed" in all_text.lower():
                     if debug: print("    Inside unsuccessful " + jobID)
-                    stressng_status_list.append("failed")
+                    stressng_status_list.insert(n, "failed")
                 # a successful run
                 elif "failed: 0" in all_text.lower():
                     if debug: print("    Inside successful " + jobID)
-                    stressng_status_list.append("success")
+                    stressng_status_list.insert(n, "success")
 
             # run did not finish
             else:
                 if debug: print("    Inside incomplete " + jobID)
-                stressng_status_list.append("incomplete run")
+                stressng_status_list.insert(n, "incomplete run")
 
             # print more details
             if detail:
@@ -136,11 +138,11 @@ for filename in os.listdir(folder_path):
                         if debug: print("        Requested run time: " +  \
                                         str(requested_run_time_sec) + " seconds or " + \
                                         slurm_time_format(requested_run_time_sec))
-                        req_run_time_list.append(slurm_time_format(requested_run_time_sec))
+                        req_run_time_list.insert(n, slurm_time_format(requested_run_time_sec))
 
                     # get final run time (only for completed runs)
                     if(stressng_status_list[-1] == "incomplete run"):
-                        final_run_time_list.append("use sacct")
+                        final_run_time_list.insert(n, "use sacct")
                     else:
                         if "s run time" in line:
                             final_run_time_string = line.split(" ")[-3]
@@ -148,7 +150,7 @@ for filename in os.listdir(folder_path):
                             if debug: print("        Final run time: " +  \
                                             str(final_run_time_sec) + " seconds or " + \
                                             slurm_time_format(final_run_time_sec))
-                            final_run_time_list.append(slurm_time_format(final_run_time_sec))
+                            final_run_time_list.insert(n, slurm_time_format(final_run_time_sec))
 
                     # get max temperature
                     T1 = 0
@@ -161,7 +163,8 @@ for filename in os.listdir(folder_path):
                         if(last_column != "x86_pk"):
                             T1 = float(last_column)
                             T2 = float(line.split(" ")[-3])
-                        # store temperatures in the list
+                        # store temperatures in the list for temp. plot
+                        # this is not the summary list
                         stressng_T1.append(T1)
                         stressng_T2.append(T2)
                         if(T1 > max_temp):
@@ -174,9 +177,12 @@ for filename in os.listdir(folder_path):
                         if(T3 > max_temp):
                             max_temp = T3
                 if(max_temp < 0.1):
-                    stressng_max_temp_list.append("NA")
+                    stressng_max_temp_list.insert(n, "NA")
                 else:
-                    stressng_max_temp_list.append(max_temp)
+                    stressng_max_temp_list.insert(n, max_temp)
+
+        # update node counter
+        n = n + 1
 
 if debug: print("")
 

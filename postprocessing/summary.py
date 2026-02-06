@@ -121,19 +121,27 @@ for filename in os.listdir(folder_path):
                     if debug: print("    Inside successful " + jobID)
                     stressng_status_list.append("success")
 
-                # print more details
-                if detail:
-                    if debug: print("    Getting details of " + filename)
-                    for i, line in enumerate(all_text.splitlines(), 1):
-                        # get requested run time
-                        if "stress-ng run time" in line:
-                            requested_run_time_sec = float(line.split(" ")[-2])
-                            if debug: print("        Requested run time: " +  \
-                                            str(requested_run_time_sec) + " seconds or " + \
-                                            slurm_time_format(requested_run_time_sec))
-                            req_run_time_list.append(slurm_time_format(requested_run_time_sec))
+            # run did not finish
+            else:
+                if debug: print("    Inside incomplete " + jobID)
+                stressng_status_list.append("incomplete run")
 
-                        # get final run time (only for completed runs)
+            # print more details
+            if detail:
+                if debug: print("    Getting details of " + filename)
+                for i, line in enumerate(all_text.splitlines(), 1):
+                    # get requested run time
+                    if "stress-ng run time" in line:
+                        requested_run_time_sec = float(line.split(" ")[-2])
+                        if debug: print("        Requested run time: " +  \
+                                        str(requested_run_time_sec) + " seconds or " + \
+                                        slurm_time_format(requested_run_time_sec))
+                        req_run_time_list.append(slurm_time_format(requested_run_time_sec))
+
+                    # get final run time (only for completed runs)
+                    if(stressng_status_list[-1] == "incomplete run"):
+                        final_run_time_list.append("use sacct")
+                    else:
                         if "s run time" in line:
                             final_run_time_string = line.split(" ")[-3]
                             final_run_time_sec = float(final_run_time_string.rstrip('s'))
@@ -142,77 +150,33 @@ for filename in os.listdir(folder_path):
                                             slurm_time_format(final_run_time_sec))
                             final_run_time_list.append(slurm_time_format(final_run_time_sec))
 
-                        # get max temperature
-                        T1 = 0
-                        T2 = 0
-                        T3 = 0
-                        # temperature printed every so often
-                        if "therm: " in line:
-                            last_column = line.split(" ")[-1]
-                            # check that it's not a header
-                            if(last_column != "x86_pk"):
-                                T1 = float(last_column)
-                                T2 = float(line.split(" ")[-3])
-                            # store temperatures in the list
-                            stressng_T1.append(T1)
-                            stressng_T2.append(T2)
-                            if(T1 > max_temp):
-                                    max_temp = T1
-                            if(T2 > max_temp):
-                                    max_temp = T2
-                        # temperature at the end of the run
-                        if "x86_pkg_temp" in line:
-                            T3 = float(line.split(" ")[-4])
-                            if(T3 > max_temp):
-                                max_temp = T3
+                    # get max temperature
+                    T1 = 0
+                    T2 = 0
+                    T3 = 0
+                    # temperature printed every so often
+                    if "therm: " in line:
+                        last_column = line.split(" ")[-1]
+                        # check that it's not a header
+                        if(last_column != "x86_pk"):
+                            T1 = float(last_column)
+                            T2 = float(line.split(" ")[-3])
+                        # store temperatures in the list
+                        stressng_T1.append(T1)
+                        stressng_T2.append(T2)
+                        if(T1 > max_temp):
+                                max_temp = T1
+                        if(T2 > max_temp):
+                                max_temp = T2
+                    # temperature at the end of the run
+                    if "x86_pkg_temp" in line:
+                        T3 = float(line.split(" ")[-4])
+                        if(T3 > max_temp):
+                            max_temp = T3
+                if(max_temp < 0.1):
+                    stressng_max_temp_list.append("NA")
+                else:
                     stressng_max_temp_list.append(max_temp)
-
-            # run did not finish
-            else:
-                if debug: print("    Inside incomplete " + jobID)
-                stressng_status_list.append("incomplete run")
-                final_run_time_list.append("use sacct")
-
-                if detail:
-                    if debug: print("    Getting details of " + filename)
-                    for i, line in enumerate(all_text.splitlines(), 1):
-                        # get requested run time
-                        if "stress-ng run time" in line:
-                            requested_run_time_sec = float(line.split(" ")[-2])
-                            if debug: print("        Requested run time: " +  \
-                                            str(requested_run_time_sec) + " seconds or " + \
-                                            slurm_time_format(requested_run_time_sec))
-                            req_run_time_list.append(slurm_time_format(requested_run_time_sec))
-
-                        # get max temperature
-                        T1 = 0
-                        T2 = 0
-                        T3 = 0
-                        # temperature printed every so often
-                        if "therm: " in line:
-                            last_column = line.split(" ")[-1]
-                            # check that it's not a header
-                            if(last_column != "x86_pk"):
-                                T1 = float(last_column)
-                                T2 = float(line.split(" ")[-3])
-                            # store temperatures in the list
-                            stressng_T1.append(T1)
-                            stressng_T2.append(T2)
-                            if(T1 > max_temp):
-                                    max_temp = T1
-                            if(T2 > max_temp):
-                                    max_temp = T2
-                        # temperature at the end of the run
-                        if "x86_pkg_temp" in line:
-                            T3 = float(line.split(" ")[-4])
-                            if(T3 > max_temp):
-                                max_temp = T3
-                    # check if temperature is still zero (no temp available on output)
-                    if(max_temp < 0.1):
-                        stressng_max_temp_list.append("NA")
-                    else:
-                        stressng_max_temp_list.append(max_temp)
-
 
 if debug: print("")
 

@@ -62,14 +62,9 @@ except ValueError:
 folder_path = "/odyssey/stress_nodes/stress-test/" + node_type + \
               "_node/output/" + run_date
 
-print("")
-print("Looking for files in " + folder_path)
-print("")
-
-#summary_table = [
-#    ["Node", "jobID", "Start run date", "stress-ng status", "gpu-burn status"],
-#    ["node01", "12345", "2025-12-18 10:00", "running", "pending"]
-#]
+# -------------------------------
+# look for stress-ng errors
+# -------------------------------
 
 # initialize summary lists
 node_list            = []
@@ -79,24 +74,24 @@ filename_list        = []
 req_run_time_list    = []
 final_run_time_list  = []
 stressng_max_temp_list = []
-if node_type=="gpu":
-    gpuburn_status   = []
 
 # list for temperature plot
 stressng_T1            = []
 stressng_T2            = []
 
-# -------------------------------
-# look for stress-ng errors
-# -------------------------------
-
 # number of files
 n = 0
 
+print("")
+print("Looking for files in " + folder_path)
+print("")
+
 # look at all files in folder_path
 for filename in os.listdir(folder_path):
-    if filename.endswith(".out"):
-        file_path = os.path.join(folder_path, filename)
+    file_path = os.path.join(folder_path, filename)
+
+    # look for stress-ng output files - end with .out
+    if (filename.endswith(".out")) and (os.stat(file_path).st_size > 0):
         filename_list.insert(n, filename)
         if debug: print("File: " + filename )
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -105,7 +100,7 @@ for filename in os.listdir(folder_path):
             max_temp = 0
 
             # gather run information
-            jobID, nodename = filename.split("_")
+            jobID, nodename, *_ = filename.split("_")
             node_list.insert(n, nodename.split(".")[0])
             jobID_list.insert(n, jobID)
             
@@ -116,16 +111,16 @@ for filename in os.listdir(folder_path):
             if "run completed in" in all_text.lower():
                 # check if unsuccessful run (stress-ng found failures)
                 if "unsuccessful run completed" in all_text.lower():
-                    if debug: print("    Inside unsuccessful " + jobID)
+                    if debug: print("    Inside unsuccessful job " + jobID)
                     stressng_status_list.insert(n, "failed")
                 # a successful run
                 elif "failed: 0" in all_text.lower():
-                    if debug: print("    Inside successful " + jobID)
+                    if debug: print("    Inside successful job " + jobID)
                     stressng_status_list.insert(n, "success")
 
             # run did not finish
             else:
-                if debug: print("    Inside incomplete " + jobID)
+                if debug: print("    Inside incomplete job " + jobID)
                 stressng_status_list.insert(n, "incomplete run")
 
             # print more details
@@ -190,16 +185,68 @@ if debug: print("")
 # look for gpu-burn errors
 # -------------------------------
 
+if node_type=="gpu":
 
+    # number of files
+    j = 0
+
+    # initialize summary lists
+    gpu_jobID_list           = []
+    gpuburn_status_list = []
+    gpu_filename_list        = []
+    gpu_req_run_time_list    = []
+    gpu_final_run_time_list  = []
+    gpuburn__max_temp_list = []
+    gpuburn_status   = []
+
+    # compose list of gpu-burn output files based list of nodes:
+    # look at all files in folder_path
+    #for filename in os.listdir(folder_path):
+    print("n: " + str(n))
+    for j in range(n):
+        print("j: " + str(j))
+        # look for gpu-burn output files - end with .txt
+        if node_list[j] in filename:# and filename.endswith(".txt"):
+            print(filename)
+            gpu_jobID, nodename, *_ = filename.split("_")
+            gpu_jobID_list.insert(j, gpu_jobID)
+            print(gpu_jobID_list[j])
+
+
+#
+#    # list for temperature plot
+#    gpuburn_T1            = []
+#    gpuburn_T2            = []
+#
+#    # look at all files in folder_path
+#    for filename in os.listdir(folder_path):
+#        # look for gpu-burn output files - end with .txt
+#        if filename.endswith(".txt"):
+#            file_path = os.path.join(folder_path, filename)
+#            filename_list.insert(n, filename)
+#            if debug: print("File: " + filename )
+#            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+#
+#                # initialize variables
+#                max_temp = 0
+#
+#                # gather run information
+#                gpu_jobID, gpu_nodename, *_ = filename.split("_")
+#                gpu_node_list.insert(n, nodename.split(".")[0])
+#                gpu_jobID_list.insert(n, jobID)
+#
+#                # read an entire file
+#                all_text = f.read()
+ 
 
 # -------------------------------
 # print summary table
 # -------------------------------
 
-# cpu nodes
-if node_type=="cpu":
-    # short summary
-    if not detail:
+# short summary
+if not detail:
+    # cpu node
+    if node_type=="cpu":
         printf("-----------------------------------------------\n")
         printf("           Node  job ID    stress-ng status \n")
         printf("-----------------------------------------------\n")
@@ -208,31 +255,47 @@ if node_type=="cpu":
             printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
 
         printf("-----------------------------------------------\n")
-    # detailed summary
+    # gpu node
     else:
-        printf("----------------------------------------------------------------------------------------------------------------\n")
-        printf("           Node  job ID    stress-ng       logfile                       requested     final         max temp\n")
-        printf("                           status          (root dir above)              run time      run time      (C)\n")
-        printf("----------------------------------------------------------------------------------------------------------------\n")
+        printf("----------------------------------------------------------------\n")
+        printf("           Node  job ID    stress-ng status  gpu-burn status\n")
+        printf("----------------------------------------------------------------\n")
 
         for i in range(len(node_list)):
-            printf("%15s  %-8s  %-15s %-29s %-12s  %-12s  %-6s\n", \
-                    node_list[i],            \
-                    jobID_list[i],           \
-                    stressng_status_list[i], \
-                    filename_list[i],        \
-                    req_run_time_list[i],    \
-                    final_run_time_list[i],  \
-                    stressng_max_temp_list[i])
-        printf("----------------------------------------------------------------------------------------------------------------\n")
+            printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
 
-# gpu nodes
-if node_type=="gpu":
-    printf("-------------------------------------------------------------------\n")
-    printf("           Node     job ID    stress-ng status     gpu-burn status \n")
-    printf("-------------------------------------------------------------------\n")
+        printf("----------------------------------------------------------------\n")
+
+# detailed summary
+else:
+    printf("----------------------------------------------------------------------------------------------------------------\n")
+    printf("                                                 stress-ng\n")
+    printf("----------------------------------------------------------------------------------------------------------------\n")
+    printf("           Node  job ID    stress-ng       logfile                       requested     final         max temp\n")
+    printf("                           status          (root dir above)              run time      run time      (C)\n")
+    printf("----------------------------------------------------------------------------------------------------------------\n")
 
     for i in range(len(node_list)):
-        printf("%15s %10s %19s\n", node_list[i], jobID_list[i], stressng_status_list[i])
+        printf("%15s  %-8s  %-15s %-29s %-12s  %-12s  %-6s\n", \
+                node_list[i],            \
+                jobID_list[i],           \
+                stressng_status_list[i], \
+                filename_list[i],        \
+                req_run_time_list[i],    \
+                final_run_time_list[i],  \
+                stressng_max_temp_list[i])
+    printf("----------------------------------------------------------------------------------------------------------------\n")
 
-    printf("-------------------------------------------------------------------\n")
+## gpu nodes
+#if node_type=="gpu":
+#    print("  ")
+#    printf("===================== GPU =====================\n")
+#    print("  ")
+#    printf("-----------------------------------------------\n")
+#    printf("           Node  job ID    gpu-burn status\n")
+#    printf("-----------------------------------------------\n")
+#
+#    for i in range(len(node_list)):
+#        printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
+#
+#    printf("-------------------------------------------------------------------\n")

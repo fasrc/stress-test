@@ -3,6 +3,7 @@ import sys
 import argparse
 import datetime
 import re
+from collections import defaultdict
 
 def printf(format, *args):
     sys.stdout.write(format % args)
@@ -19,6 +20,65 @@ def slurm_time_format(total_seconds: int):
     minutes, secs = divmod(remainder, 60)
 
     return f"{days}-{hours:02d}:{minutes:02d}:{secs:02d}"
+
+def find_pairs(stressng_filename_list, gpuburn_filename_list):
+    """
+    Given:
+      - stressng_filename_list: list of stressng *.out filenames
+      - gpuburn_filename_list: list of *_gpuburn.txt filenames
+
+    Return:
+      - list of (gpuburn_file, stressng_file) tuples, matched by host and
+        closest job id (min |jobid_stressng - jobid_gpuburn|).
+    """
+
+    pattern = re.compile(r'^(\d+)_([^_.]+)')
+
+    def parse_job_and_host(filename):
+        """
+        Extract (job_id:int, host:str) from filenames like:
+        44759359_holygpu8a12503_gpuburn.txt
+        44759360_holygpu8a12503.out
+        """
+        m = pattern.match(filename)
+        if not m:
+            return None, None
+        job_id_str, host = m.groups()
+        return int(job_id_str), host
+
+    # Group stressng .out files by host: host -> list of (job_id, filename)
+    stressng_by_host = defaultdict(list)
+    for out_name in stressng_filename_list:
+        job_id, host = parse_job_and_host(out_name)
+        if host is None:
+            continue
+        stressng_by_host[host].append((job_id, out_name))
+
+    # Sort each host's list by job_id to make "closest" well-defined
+    for host in stressng_by_host:
+        stressng_by_host[host].sort(key=lambda x: x[0])
+
+    pairs = []
+
+    for gpuburn_name in gpuburn_filename_list:
+        g_job_id, host = parse_job_and_host(gpuburn_name)
+        if host is None or host not in stressng_by_host:
+            continue
+
+        # Find .out with minimal absolute difference in job_id
+        best_out = None
+        best_diff = None
+
+        for o_job_id, o_name in stressng_by_host[host]:
+            diff = abs(o_job_id - g_job_id)
+            if best_diff is None or diff < best_diff:
+                best_diff = diff
+                best_out = o_name
+
+        if best_out is not None:
+            pairs.append((gpuburn_name, best_out))
+
+    return pairs
 
 # -------------------------------
 # parse input arguments
@@ -187,7 +247,7 @@ if debug: print("")
 
 if node_type=="gpu":
 
-    # number of files
+    # number of gpuburn files
     j = 0
 
     # initialize summary lists
@@ -202,7 +262,7 @@ if node_type=="gpu":
     all_entries = os.listdir(folder_path)
 
     # compose list of gpu-burn output files
-    gpuburn_files = [
+    gpuburn_files_unmatched = [
         entry
         for entry in all_entries
             # ensure only files (no directories)
@@ -210,36 +270,19 @@ if node_type=="gpu":
                 # ensure only files that end with gpuburn.txt
                 if entry.endswith("gpuburn.txt")
     ]
-    print(gpuburn_files)
+    print(gpuburn_files_unmatched)
 
-    # because stress-ng and gpu-burn are run in pair on gpu nodes
-    # we have to find the matching pairs
-    for j in range(n):
-        matching_files = [
-            filename
-            for filename in gpuburn_files
-                if stressng_node[j] in filename
-        ]
-        print("node: " + stressng_node[j])
-        print("matching_files: " + str(matching_files))
-        print(len(matching_files))
-
-        # no gpuburn output file
-        if len(matching_files) == 0:
-            gpuburn_jobid.insert(j,"N/A")
-            gpuburn_status.insert(j, "did not start")
-        # one matching file -> found pair
-        elif len(matching_files) == 1:
-            gpuburn_jobid.insert(j, filename.split("_")[0])
-            gpuburn_status.insert(j, "will check")
-            print("job ID " + str(gpuburn_jobid[j]))
-        # more than one gpuburn output file -> need to find pairs
-        #else:
+    # on gpunodes, stress-ng and gpu-burn are run in pair.
+    # thus, we have to find the matching pairs.
+    # find the gpuburn file that matches the stressng node
+    l = 0
+    pairs = find_pairs(stressng_filename, gpuburn_files_unmatched)
+    for gpuburn_file, stressng_file in pairs:
+        print(f"{stressng_file}  <-->  {gpuburn_file}")
+        print(stressng_filename[l])
+        l = l + 1
 
 
-
-
-#
 #    # list for temperature plot
 #    gpuburn_T1            = []
 #    gpuburn_T2            = []

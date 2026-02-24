@@ -67,19 +67,19 @@ folder_path = "/odyssey/stress_nodes/stress-test/" + node_type + \
 # -------------------------------
 
 # initialize summary lists
-node_list            = []
-jobID_list           = []
-stressng_status_list = []
-filename_list        = []
-req_run_time_list    = []
-final_run_time_list  = []
-stressng_max_temp_list = []
+stressng_node          = []
+stressng_jobid         = []
+stressng_status        = []
+stressng_filename      = []
+stressng_req_runtime   = []
+stressng_final_runtime = []
+stressng_max_temp      = []
 
 # list for temperature plot
 stressng_T1            = []
 stressng_T2            = []
 
-# number of files
+# number of stressng files
 n = 0
 
 print("")
@@ -92,7 +92,7 @@ for filename in os.listdir(folder_path):
 
     # look for stress-ng output files - end with .out
     if (filename.endswith(".out")) and (os.stat(file_path).st_size > 0):
-        filename_list.insert(n, filename)
+        stressng_filename.insert(n, filename)
         if debug: print("File: " + filename )
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
 
@@ -101,8 +101,8 @@ for filename in os.listdir(folder_path):
 
             # gather run information
             jobID, nodename, *_ = filename.split("_")
-            node_list.insert(n, nodename.split(".")[0])
-            jobID_list.insert(n, jobID)
+            stressng_node.insert(n, nodename.split(".")[0])
+            stressng_jobid.insert(n, jobID)
             
             # read an entire file
             all_text = f.read()
@@ -112,16 +112,16 @@ for filename in os.listdir(folder_path):
                 # check if unsuccessful run (stress-ng found failures)
                 if "unsuccessful run completed" in all_text.lower():
                     if debug: print("    Inside unsuccessful job " + jobID)
-                    stressng_status_list.insert(n, "failed")
+                    stressng_status.insert(n, "failed")
                 # a successful run
                 elif "failed: 0" in all_text.lower():
                     if debug: print("    Inside successful job " + jobID)
-                    stressng_status_list.insert(n, "success")
+                    stressng_status.insert(n, "success")
 
             # run did not finish
             else:
                 if debug: print("    Inside incomplete job " + jobID)
-                stressng_status_list.insert(n, "incomplete run")
+                stressng_status.insert(n, "incomplete run")
 
             # print more details
             if detail:
@@ -129,23 +129,23 @@ for filename in os.listdir(folder_path):
                 for i, line in enumerate(all_text.splitlines(), 1):
                     # get requested run time
                     if "stress-ng run time" in line:
-                        requested_run_time_sec = float(line.split(" ")[-2])
+                        requested_runtime_sec = float(line.split(" ")[-2])
                         if debug: print("        Requested run time: " +  \
-                                        str(requested_run_time_sec) + " seconds or " + \
-                                        slurm_time_format(requested_run_time_sec))
-                        req_run_time_list.insert(n, slurm_time_format(requested_run_time_sec))
+                                        str(requested_runtime_sec) + " seconds or " + \
+                                        slurm_time_format(requested_runtime_sec))
+                        stressng_req_runtime.insert(n, slurm_time_format(requested_runtime_sec))
 
                     # get final run time (only for completed runs)
-                    if(stressng_status_list[-1] == "incomplete run"):
-                        final_run_time_list.insert(n, "use sacct")
+                    if(stressng_status[-1] == "incomplete run"):
+                        stressng_final_runtime.insert(n, "use sacct")
                     else:
                         if "s run time" in line:
-                            final_run_time_string = line.split(" ")[-3]
-                            final_run_time_sec = float(final_run_time_string.rstrip('s'))
+                            final_runtime_string = line.split(" ")[-3]
+                            final_runtime_sec = float(final_runtime_string.rstrip('s'))
                             if debug: print("        Final run time: " +  \
-                                            str(final_run_time_sec) + " seconds or " + \
-                                            slurm_time_format(final_run_time_sec))
-                            final_run_time_list.insert(n, slurm_time_format(final_run_time_sec))
+                                            str(final_runtime_sec) + " seconds or " + \
+                                            slurm_time_format(final_runtime_sec))
+                            stressng_final_runtime.insert(n, slurm_time_format(final_runtime_sec))
 
                     # get max temperature
                     T1 = 0
@@ -172,9 +172,9 @@ for filename in os.listdir(folder_path):
                         if(T3 > max_temp):
                             max_temp = T3
                 if(max_temp < 0.1):
-                    stressng_max_temp_list.insert(n, "NA")
+                    stressng_max_temp.insert(n, "NA")
                 else:
-                    stressng_max_temp_list.insert(n, max_temp)
+                    stressng_max_temp.insert(n, max_temp)
 
         # update node counter
         n = n + 1
@@ -191,12 +191,12 @@ if node_type=="gpu":
     j = 0
 
     # initialize summary lists
-    gpuburn_jobID_list           = []
-    gpuburn_status_list          = []
-    gpuburn_filename_list        = []
-    gpuburn_req_run_time_list    = []
-    gpuburn_final_run_time_list  = []
-    gpuburn_max_temp_list        = []
+    gpuburn_jobid           = []
+    gpuburn_status          = []
+    gpuburn_filename        = []
+    gpuburn_req_runtime     = []
+    gpuburn_final_runtime   = []
+    gpuburn_max_temp        = []
 
     # look at all files in folder_path
     all_entries = os.listdir(folder_path)
@@ -218,21 +218,21 @@ if node_type=="gpu":
         matching_files = [
             filename
             for filename in gpuburn_files
-                if node_list[j] in filename
+                if stressng_node[j] in filename
         ]
-        print("node: " + node_list[j])
+        print("node: " + stressng_node[j])
         print("matching_files: " + str(matching_files))
         print(len(matching_files))
 
         # no gpuburn output file
         if len(matching_files) == 0:
-            gpuburn_jobID_list.insert(j,"N/A")
-            gpuburn_status_list.insert(j, "did not start")
+            gpuburn_jobid.insert(j,"N/A")
+            gpuburn_status.insert(j, "did not start")
         # one matching file -> found pair
         elif len(matching_files) == 1:
-            gpuburn_jobID_list.insert(j, filename.split("_")[0])
-            gpuburn_status_list.insert(j, "will check")
-            print("job ID " + str(gpuburn_jobID_list[j]))
+            gpuburn_jobid.insert(j, filename.split("_")[0])
+            gpuburn_status.insert(j, "will check")
+            print("job ID " + str(gpuburn_jobid[j]))
         # more than one gpuburn output file -> need to find pairs
         #else:
 
@@ -258,7 +258,7 @@ if node_type=="gpu":
 #
 #                # gather run information
 #                gpu_jobID, gpu_nodename, *_ = filename.split("_")
-#                gpu_node_list.insert(n, nodename.split(".")[0])
+#                gpu_stressng_nodes.insert(n, nodename.split(".")[0])
 #                gpu_jobID_list.insert(n, jobID)
 #
 #                # read an entire file
@@ -277,8 +277,8 @@ if not detail:
         printf("           Node  job ID    stress-ng status \n")
         printf("-----------------------------------------------\n")
 
-        for i in range(len(node_list)):
-            printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
+        for i in range(len(stressng_node)):
+            printf("%15s  %-8s  %-17s \n", stressng_node[i], stressng_jobid[i], stressng_status[i])
 
         printf("-----------------------------------------------\n")
     # gpu node
@@ -288,13 +288,13 @@ if not detail:
         printf("           Node  job ID    status          job ID    status\n")
         printf("-----------------------------------------------------------------------\n")
 
-        for i in range(len(node_list)):
+        for i in range(len(stressng_node)):
             printf("%15s  %-8s  %-17s   %-8s  %-17s\n", \
-                    node_list[i], \
-                    jobID_list[i], \
-                    stressng_status_list[i], \
-                    gpuburn_jobID_list[i], \
-                    gpuburn_status_list[i]
+                    stressng_node[i],   \
+                    stressng_jobid[i],  \
+                    stressng_status[i], \
+                    gpuburn_jobid[i],   \
+                    gpuburn_status[i]
                     )
 
         printf("----------------------------------------------------------------\n")
@@ -308,15 +308,15 @@ else:
     printf("                           status          (root dir above)              run time      run time      (C)\n")
     printf("----------------------------------------------------------------------------------------------------------------\n")
 
-    for i in range(len(node_list)):
+    for i in range(len(stressng_node)):
         printf("%15s  %-8s  %-15s %-29s %-12s  %-12s  %-6s\n", \
-                node_list[i],            \
-                jobID_list[i],           \
-                stressng_status_list[i], \
-                filename_list[i],        \
-                req_run_time_list[i],    \
-                final_run_time_list[i],  \
-                stressng_max_temp_list[i])
+                stressng_node[i],          \
+                stressng_jobid[i],         \
+                stressng_status[i],        \
+                stressng_filename[i],      \
+                stressng_req_runtime[i],   \
+                stressng_final_runtime[i], \
+                stressng_max_temp[i])
     printf("----------------------------------------------------------------------------------------------------------------\n")
 
 ## gpu nodes
@@ -328,7 +328,7 @@ else:
 #    printf("           Node  job ID    gpu-burn status\n")
 #    printf("-----------------------------------------------\n")
 #
-#    for i in range(len(node_list)):
-#        printf("%15s  %-8s  %-17s \n", node_list[i], jobID_list[i], stressng_status_list[i])
+#    for i in range(len(stressng_node)):
+#        printf("%15s  %-8s  %-17s \n", stressng_node[i], stressng_jobid[i], stressng_status[i])
 #
 #    printf("-------------------------------------------------------------------\n")

@@ -58,25 +58,38 @@ def find_pairs(stressng_filename_list, gpuburn_filename_list):
     for host in stressng_by_host:
         stressng_by_host[host].sort(key=lambda x: x[0])
 
-    pairs = []
+    # For each stressng file, track its best matching gpuburn (if any)
+    # stressng_best[g_stressng_filename] = (best_diff, gpuburn_filename)
+    stressng_best = {}
 
     for gpuburn_name in gpuburn_filename_list:
         g_job_id, host = parse_job_and_host(gpuburn_name)
         if host is None or host not in stressng_by_host:
             continue
 
-        # Find .out with minimal absolute difference in job_id
-        best_out = None
+        best_stressng_name = None
         best_diff = None
 
-        for o_job_id, o_name in stressng_by_host[host]:
-            diff = abs(o_job_id - g_job_id)
+        for s_job_id, s_name in stressng_by_host[host]:
+            diff = abs(s_job_id - g_job_id)
             if best_diff is None or diff < best_diff:
                 best_diff = diff
-                best_out = o_name
+                best_stressng_name = s_name
 
-        if best_out is not None:
-            pairs.append((gpuburn_name, best_out))
+        if best_stressng_name is not None:
+            # If this stressng already has a candidate, keep the closer one
+            prev = stressng_best.get(best_stressng_name)
+            if prev is None or best_diff < prev[0]:
+                stressng_best[best_stressng_name] = (best_diff, gpuburn_name)
+
+    # Build final list: one entry per stressng file
+    pairs = []
+    for stressng_name in stressng_filename_list:
+        if stressng_name in stressng_best:
+            _, gpuburn_name = stressng_best[stressng_name]
+        else:
+            gpuburn_name = "NA"
+        pairs.append((gpuburn_name, stressng_name))
 
     return pairs
 
@@ -247,8 +260,9 @@ if debug: print("")
 
 if node_type=="gpu":
 
-    # number of gpuburn files
-    j = 0
+    if debug:
+        print("+++ gpuburn +++")
+        print("")
 
     # initialize summary lists
     gpuburn_jobid           = []
@@ -270,42 +284,71 @@ if node_type=="gpu":
                 # ensure only files that end with gpuburn.txt
                 if entry.endswith("gpuburn.txt")
     ]
-    print(gpuburn_files_unmatched)
+    if debug:
+        print("Unmatched gpuburn output files:")
+        print(f"    {gpuburn_files_unmatched}")
 
     # on gpunodes, stress-ng and gpu-burn are run in pair.
     # thus, we have to find the matching pairs.
     # find the gpuburn file that matches the stressng node
-    l = 0
     pairs = find_pairs(stressng_filename, gpuburn_files_unmatched)
-    for gpuburn_file, stressng_file in pairs:
-        print(f"{stressng_file}  <-->  {gpuburn_file}")
-        print(stressng_filename[l])
-        l = l + 1
+
+    # populate gpuburn_filename list
+    if debug: print("Matched stressng and gpuburn output files:")
+    for i, (gpuburn_file, stressng_file) in enumerate(pairs):
+        if debug: print(f"    {stressng_file}  <-->  {gpuburn_file}")
+        gpuburn_jobid.insert(i, gpuburn_file.split("_")[0])
+        gpuburn_filename.insert(i, gpuburn_file)
+
+    # search for OK (sucess) or FAULTY (failure)
+    for i, filename in enumerate(gpuburn_filename):
+        print("WWW filename: " + filename)
+
+        # skip when gpuburn output file does not exist
+        if filename == "NA":
+            gpuburn_status.insert(i,"did not start")
+        else:
+            # compose file_path
+            file_path = os.path.join(folder_path, filename)
+
+            # open file
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+
+                # read an entire file
+                all_text = f.read()
+
+                # check run completed
+                match = re.search(r"Tested (\d+) GPUs:", all_text)
+                if match is None:
+                    gpuburn_status.insert(i,"incomplete run")
+                else:
+                    print(match.group(1))
+
+                    if match:
+                        num_gpus = match.group(1)
+                        gpuburn_status.insert(i,"run")
+                    else:
+                        gpuburn_status.insert(i,"incomplete run")
+
+
+#            if "Tested 4 GPUs" in all_text.lower():
+#                # check if unsuccessful run (stress-ng found failures)
+#                if "unsuccessful run completed" in all_text.lower():
+#                    if debug: print("    Inside unsuccessful job " + jobID)
+#                    stressng_status.insert(n, "failed")
+#                # a successful run
+#                elif "failed: 0" in all_text.lower():
+#                    if debug: print("    Inside successful job " + jobID)
+#                    stressng_status.insert(n, "success")
+
+
+
 
 
 #    # list for temperature plot
 #    gpuburn_T1            = []
 #    gpuburn_T2            = []
 #
-#    # look at all files in folder_path
-#    for filename in os.listdir(folder_path):
-#        # look for gpu-burn output files - end with .txt
-#        if filename.endswith(".txt"):
-#            file_path = os.path.join(folder_path, filename)
-#            filename_list.insert(n, filename)
-#            if debug: print("File: " + filename )
-#            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-#
-#                # initialize variables
-#                max_temp = 0
-#
-#                # gather run information
-#                gpu_jobID, gpu_nodename, *_ = filename.split("_")
-#                gpu_stressng_nodes.insert(n, nodename.split(".")[0])
-#                gpu_jobID_list.insert(n, jobID)
-#
-#                # read an entire file
-#                all_text = f.read()
 
 
 # -------------------------------
@@ -327,12 +370,12 @@ if not detail:
     # gpu node
     else:
         printf("-----------------------------------------------------------------------\n")
-        printf("                    stress-ng                   gpu-burn\n")
-        printf("           Node  job ID    status          job ID    status\n")
+        printf("                      stress-ng                  gpu-burn\n")
+        printf("           Node    job ID    status          job ID    status\n")
         printf("-----------------------------------------------------------------------\n")
 
         for i in range(len(stressng_node)):
-            printf("%15s  %-8s  %-17s   %-8s  %-17s\n", \
+            printf("%15s    %-8s  %-14s  %-8s  %-14s\n", \
                     stressng_node[i],   \
                     stressng_jobid[i],  \
                     stressng_status[i], \
@@ -340,7 +383,7 @@ if not detail:
                     gpuburn_status[i]
                     )
 
-        printf("----------------------------------------------------------------\n")
+        printf("-----------------------------------------------------------------------\n")
 
 # detailed summary
 else:

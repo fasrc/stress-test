@@ -395,16 +395,24 @@ else:
                 stressng_max_temp[i])
     printf("----------------------------------------------------------------------------------------------------------------\n")
 
-## gpu nodes
-#if node_type=="gpu":
-#    print("  ")
-#    printf("===================== GPU =====================\n")
-#    print("  ")
-#    printf("-----------------------------------------------\n")
-#    printf("           Node  job ID    gpu-burn status\n")
-#    printf("-----------------------------------------------\n")
-#
-#    for i in range(len(stressng_node)):
-#        printf("%15s  %-8s  %-17s \n", stressng_node[i], stressng_jobid[i], stressng_status[i])
-#
-#    printf("-------------------------------------------------------------------\n")
+    # gpu nodes
+    if node_type=="gpu":
+        print("")
+        printf("-------------------------------------------------------------------------------------------------------------------------\n")
+        printf("                                                 gpu-burn\n")
+        printf("-------------------------------------------------------------------------------------------------------------------------\n")
+        printf("           Node  job ID    gpu-burn        logfile                               requested     final         max temp\n")
+        printf("                           status          (root dir above)                      run time      run time      (C)\n")
+        printf("-------------------------------------------------------------------------------------------------------------------------\n")
+
+        for i in range(len(stressng_node)):
+            printf("%15s  %-8s  %-15s %-37s %-12s  %-12s  %-6s\n", \
+                    stressng_node[i],          \
+                    gpuburn_jobid[i],          \
+                    gpuburn_status[i],         \
+                    gpuburn_filename[i],       \
+                    stressng_req_runtime[i],   \
+                    stressng_final_runtime[i], \
+                    stressng_max_temp[i])
+        printf("-------------------------------------------------------------------------------------------------------------------------\n")
+

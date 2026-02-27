@@ -300,9 +300,9 @@ if node_type=="gpu":
         gpuburn_jobid.insert(i, gpuburn_file.split("_")[0])
         gpuburn_filename.insert(i, gpuburn_file)
 
-    # search for OK (sucess) or FAULTY (failure)
+    # loop through gpuburn output files
     for i, filename in enumerate(gpuburn_filename):
-        print("WWW filename: " + filename)
+        if debug: print("File: " + filename )
 
         # skip when gpuburn output file does not exist
         if filename == "NA":
@@ -322,25 +322,15 @@ if node_type=="gpu":
                 if match is None:
                     gpuburn_status.insert(i,"incomplete run")
                 else:
-                    print(match.group(1))
-
-                    if match:
-                        num_gpus = match.group(1)
-                        gpuburn_status.insert(i,"run")
-                    else:
-                        gpuburn_status.insert(i,"incomplete run")
-
-
-#            if "Tested 4 GPUs" in all_text.lower():
-#                # check if unsuccessful run (stress-ng found failures)
-#                if "unsuccessful run completed" in all_text.lower():
-#                    if debug: print("    Inside unsuccessful job " + jobID)
-#                    stressng_status.insert(n, "failed")
-#                # a successful run
-#                elif "failed: 0" in all_text.lower():
-#                    if debug: print("    Inside successful job " + jobID)
-#                    stressng_status.insert(n, "success")
-
+                    # search for OK (sucess) in all GPUs
+                    num_gpus = int(match.group(1))
+                    if debug: print("    Number of GPUs: " + str(num_gpus))
+                    for j in range(num_gpus):
+                        ok_matches = len(re.findall(r"GPU \d+: OK", all_text))
+                        if num_gpus == ok_matches:
+                            gpuburn_status.insert(i,"success")
+                        else:
+                            gpuburn_status.insert(i,"failed")
 
 
 

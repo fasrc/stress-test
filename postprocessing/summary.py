@@ -275,6 +275,7 @@ if node_type=="gpu":
     gpuburn_num_gpus        = []
     gpuburn_final_runtime   = []
     gpuburn_max_temp        = []
+    gpuburn_max_gflops      = []
 
     # look at all files in folder_path
     all_entries = os.listdir(folder_path)
@@ -365,6 +366,21 @@ if node_type=="gpu":
                     highest = None
                     gpuburn_max_temp.insert(i, "NA")
 
+                # get gpus gflops
+                gflops_pattern = r"\b(\d{5,6}) Gflop\b"
+                all_gflops = re.findall(gflops_pattern, all_text)
+
+                # convert to integer
+                all_gflops = [int(t) for t in all_gflops]
+
+                # find gpu max temperature
+                if all_gflops:
+                    highest = max(all_gflops)
+                    gpuburn_max_gflops.insert(i, max(all_gflops))
+                else:
+                    highest = None
+                    gpuburn_max_gflops.insert(i, "NA")
+
 # -------------------------------
 # print summary table
 # -------------------------------
@@ -429,18 +445,19 @@ else:
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
         printf("                                                 gpu-burn\n")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
-        printf("           Node  job ID    gpu-burn        logfile                               n gpus  max temp  final\n")
-        printf("                           status          (root dir above)                      tested  (C)       run time\n")
+        printf("           Node  job ID    gpu-burn        logfile                               n gpus  max temp  max      final\n")
+        printf("                           status          (root dir above)                      tested  (C)       Gflop/s  run time\n")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
 
         for i in range(len(stressng_node)):
-            printf("%15s  %-8s  %-15s %-37s %-6s  %-8s  %-12s\n", \
+            printf("%15s  %-8s  %-15s %-37s %-6s  %-8s  %-7s  %-12s\n", \
                     stressng_node[i],          \
                     gpuburn_jobid[i],          \
                     gpuburn_status[i],         \
                     gpuburn_filename[i],       \
                     gpuburn_num_gpus[i],       \
                     gpuburn_max_temp[i],       \
+                    gpuburn_max_gflops[i],     \
                     gpuburn_final_runtime[i])
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
 

@@ -159,6 +159,10 @@ print("")
 print("Looking for files in " + folder_path)
 print("")
 
+if debug:
+    print("+++ stressng debug +++")
+    print("")
+
 # look at all files in folder_path
 for filename in os.listdir(folder_path):
     file_path = os.path.join(folder_path, filename)
@@ -261,14 +265,14 @@ if debug: print("")
 if node_type=="gpu":
 
     if debug:
-        print("+++ gpuburn +++")
+        print("+++ gpuburn debug +++")
         print("")
 
     # initialize summary lists
     gpuburn_jobid           = []
     gpuburn_status          = []
     gpuburn_filename        = []
-    gpuburn_req_runtime     = []
+    gpuburn_num_gpus        = []
     gpuburn_final_runtime   = []
     gpuburn_max_temp        = []
 
@@ -307,6 +311,7 @@ if node_type=="gpu":
         # skip when gpuburn output file does not exist
         if filename == "NA":
             gpuburn_status.insert(i,"did not start")
+            gpuburn_num_gpus.insert(i,"NA")
         else:
             # compose file_path
             file_path = os.path.join(folder_path, filename)
@@ -318,28 +323,47 @@ if node_type=="gpu":
                 all_text = f.read()
 
                 # check run completed
-                match = re.search(r"Tested (\d+) GPUs:", all_text)
-                if match is None:
+                comp_run_match = re.search(r"Tested (\d+) GPUs:", all_text)
+                if comp_run_match is None:
                     gpuburn_status.insert(i,"incomplete run")
+                    gpuburn_num_gpus.insert(i,"NA")
+                    gpuburn_final_runtime.insert(i,"use sacct")
                 else:
                     # search for OK (sucess) in all GPUs
-                    num_gpus = int(match.group(1))
+                    num_gpus = int(comp_run_match.group(1))
                     if debug: print("    Number of GPUs: " + str(num_gpus))
                     for j in range(num_gpus):
                         ok_matches = len(re.findall(r"GPU \d+: OK", all_text))
                         if num_gpus == ok_matches:
                             gpuburn_status.insert(i,"success")
+                            gpuburn_num_gpus.insert(i,num_gpus)
                         else:
                             gpuburn_status.insert(i,"failed")
+                            gpuburn_num_gpus.insert(i,num_gpus)
 
+                    # get final run time
+                    # findall will get the initial run time and the final run time for each card
+                    run_time_pattern = r"Burning for (\d+) seconds"
+                    run_time = re.findall(run_time_pattern, all_text)
 
+                    # since we are only getting final run time of completed runs,
+                    # we have a list of N gpus + 1, pick the last one
+                    gpuburn_final_runtime.insert(n, slurm_time_format(int(run_time[-1])))
 
+                # get gpus temperatures
+                temp_pattern = r"\b(\d{2,3}) C\b"
+                all_temps = re.findall(temp_pattern, all_text)
 
-#    # list for temperature plot
-#    gpuburn_T1            = []
-#    gpuburn_T2            = []
-#
+                # convert to integer
+                all_temps = [int(t) for t in all_temps]
 
+                # find gpu max temperature
+                if all_temps:
+                    highest = max(all_temps)
+                    gpuburn_max_temp.insert(i, max(all_temps))
+                else:
+                    highest = None
+                    gpuburn_max_temp.insert(i, "NA")
 
 # -------------------------------
 # print summary table
@@ -349,6 +373,7 @@ if node_type=="gpu":
 if not detail:
     # cpu node
     if node_type=="cpu":
+        print("")
         printf("-----------------------------------------------\n")
         printf("           Node  job ID    stress-ng status \n")
         printf("-----------------------------------------------\n")
@@ -359,6 +384,7 @@ if not detail:
         printf("-----------------------------------------------\n")
     # gpu node
     else:
+        print("")
         printf("-----------------------------------------------------------------------\n")
         printf("                      stress-ng                  gpu-burn\n")
         printf("           Node    job ID    status          job ID    status\n")
@@ -377,6 +403,7 @@ if not detail:
 
 # detailed summary
 else:
+    print("")
     printf("----------------------------------------------------------------------------------------------------------------\n")
     printf("                                                 stress-ng\n")
     printf("----------------------------------------------------------------------------------------------------------------\n")
@@ -398,21 +425,22 @@ else:
     # gpu nodes
     if node_type=="gpu":
         print("")
+        print("")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
         printf("                                                 gpu-burn\n")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
-        printf("           Node  job ID    gpu-burn        logfile                               requested     final         max temp\n")
-        printf("                           status          (root dir above)                      run time      run time      (C)\n")
+        printf("           Node  job ID    gpu-burn        logfile                               n gpus  final         max temp\n")
+        printf("                           status          (root dir above)                      tested  run time      (C)\n")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
 
         for i in range(len(stressng_node)):
-            printf("%15s  %-8s  %-15s %-37s %-12s  %-12s  %-6s\n", \
+            printf("%15s  %-8s  %-15s %-37s %-6s  %-12s  %-6s\n", \
                     stressng_node[i],          \
                     gpuburn_jobid[i],          \
                     gpuburn_status[i],         \
                     gpuburn_filename[i],       \
-                    stressng_req_runtime[i],   \
-                    stressng_final_runtime[i], \
-                    stressng_max_temp[i])
+                    gpuburn_num_gpus[i],       \
+                    gpuburn_final_runtime[i], \
+                    gpuburn_max_temp[i])
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
 

@@ -407,19 +407,19 @@ else:
     printf("----------------------------------------------------------------------------------------------------------------\n")
     printf("                                                 stress-ng\n")
     printf("----------------------------------------------------------------------------------------------------------------\n")
-    printf("           Node  job ID    stress-ng       logfile                       requested     final         max temp\n")
-    printf("                           status          (root dir above)              run time      run time      (C)\n")
+    printf("           Node  job ID    stress-ng       logfile                       max temp  requested     final\n")
+    printf("                           status          (root dir above)              (C)       run time      run time\n")
     printf("----------------------------------------------------------------------------------------------------------------\n")
 
     for i in range(len(stressng_node)):
-        printf("%15s  %-8s  %-15s %-29s %-12s  %-12s  %-6s\n", \
+        printf("%15s  %-8s  %-15s %-29s %-8s  %-12s  %-12s\n", \
                 stressng_node[i],          \
                 stressng_jobid[i],         \
                 stressng_status[i],        \
                 stressng_filename[i],      \
+                stressng_max_temp[i],      \
                 stressng_req_runtime[i],   \
-                stressng_final_runtime[i], \
-                stressng_max_temp[i])
+                stressng_final_runtime[i])
     printf("----------------------------------------------------------------------------------------------------------------\n")
 
     # gpu nodes
@@ -429,18 +429,18 @@ else:
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
         printf("                                                 gpu-burn\n")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
-        printf("           Node  job ID    gpu-burn        logfile                               n gpus  final         max temp\n")
-        printf("                           status          (root dir above)                      tested  run time      (C)\n")
+        printf("           Node  job ID    gpu-burn        logfile                               n gpus  max temp  final\n")
+        printf("                           status          (root dir above)                      tested  (C)       run time\n")
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
 
         for i in range(len(stressng_node)):
-            printf("%15s  %-8s  %-15s %-37s %-6s  %-12s  %-6s\n", \
+            printf("%15s  %-8s  %-15s %-37s %-6s  %-8s  %-12s\n", \
                     stressng_node[i],          \
                     gpuburn_jobid[i],          \
                     gpuburn_status[i],         \
                     gpuburn_filename[i],       \
                     gpuburn_num_gpus[i],       \
-                    gpuburn_final_runtime[i], \
-                    gpuburn_max_temp[i])
+                    gpuburn_max_temp[i],       \
+                    gpuburn_final_runtime[i])
         printf("-------------------------------------------------------------------------------------------------------------------------\n")
 

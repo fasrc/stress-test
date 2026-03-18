@@ -170,8 +170,8 @@ while read nodename; do
     # standard output and error file
     gpu_output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.out
     gpu_error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.err
-    cpu_output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N_stressng.out
-    cpu_error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N_stressng.err
+    cpu_output_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.out
+    cpu_error_file=/odyssey/stress_nodes/stress-test/gpu_node/output/"$(date "+%Y-%m-%d")"/%j_%N.err
 
     ## write summary
     echo "    nodename          ${nodename}"

@@ -6,3 +6,7 @@
 # Ignore output folders
 cpu_node/output/
 gpu_node/output/
+
+# Ignore node_list files
+cpu_node/node_list.txt
+gpu_node/node_list.txt
